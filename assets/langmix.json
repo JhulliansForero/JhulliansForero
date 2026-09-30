@@ -2,11 +2,29 @@
   "title": "LANGUAGE STACK",
   "_comment": "Valores de 0 a 100. Edita los valores y vuelve a correr scripts/radar.py.",
   "axes": [
-    {"label": "Java", "value": 85},
-    {"label": "JavaScript", "value": 75},
-    {"label": "HTML/CSS", "value": 80},
-    {"label": "SQL", "value": 65},
-    {"label": "Python", "value": 55},
-    {"label": "Bash", "value": 45}
+    {
+      "label": "Java",
+      "value": 85
+    },
+    {
+      "label": "JavaScript",
+      "value": 75
+    },
+    {
+      "label": "HTML/CSS",
+      "value": 80
+    },
+    {
+      "label": "PHP",
+      "value": 55
+    },
+    {
+      "label": "Python",
+      "value": 60
+    },
+    {
+      "label": "C++",
+      "value": 60
+    }
   ]
 }

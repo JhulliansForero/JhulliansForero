@@ -41,23 +41,23 @@
   </thead>
   <tbody>
     <tr>
-      <td width="50%" valign="top"><code>├─ ☕ backend:</code><br><br>
-        <img src="https://skillicons.dev/icons?i=java,spring,maven,python" alt="Java, Spring Boot, Maven y Python"><br>
-        <sub><code>Java 17 · Spring Boot · Maven · Python</code></sub>
+      <td width="50%" valign="top"><code>├─ ☕ languages:</code><br><br>
+        <img src="https://skillicons.dev/icons?i=java,cpp,python,php" alt="Java, C++, Python y PHP"><br>
+        <sub><code>Java · C++ · Python · PHP</code></sub>
       </td>
-      <td width="50%" valign="top"><code>├─ ▣ databases:</code><br><br>
-        <img src="https://skillicons.dev/icons?i=postgres" alt="PostgreSQL"><br>
-        <sub><code>PostgreSQL · JPA/Hibernate</code></sub>
+      <td width="50%" valign="top"><code>├─ ▣ backend_databases:</code><br><br>
+        <img src="https://skillicons.dev/icons?i=spring,postgres" alt="Spring Boot y PostgreSQL"><br>
+        <sub><code>Spring Boot · PostgreSQL · JPA/Hibernate</code></sub>
       </td>
     </tr>
     <tr>
       <td valign="top"><code>├─ ✦ frontend:</code><br><br>
-        <img src="https://skillicons.dev/icons?i=javascript,react,html,css" alt="JavaScript, React, HTML y CSS"><br>
-        <sub><code>JavaScript · React · HTML · CSS · PWA</code></sub>
+        <img src="https://skillicons.dev/icons?i=html,css,javascript,react" alt="HTML, CSS, JavaScript y React"><br>
+        <sub><code>HTML · CSS · JavaScript · React</code></sub>
       </td>
       <td valign="top"><code>╰─ ⚙ tools:</code><br><br>
-        <img src="https://skillicons.dev/icons?i=git,github,vscode,eclipse,bash" alt="Git, GitHub, VS Code, Eclipse y Bash"><br>
-        <sub><code>Git · GitHub · VS Code · Eclipse · Bash</code></sub>
+        <img src="https://skillicons.dev/icons?i=vscode,eclipse,git,github,docker,bash,postman" alt="VS Code, Eclipse, Git, GitHub, Docker, Bash y Postman"><br>
+        <sub><code>VS Code · Eclipse · Git · GitHub · Docker · Bash · Postman</code></sub>
       </td>
     </tr>
   </tbody>
