@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import PathPatch
 from matplotlib.transforms import Affine2D
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageFilter, ImageOps
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 from svgpath2mpl import parse_path
@@ -38,9 +38,10 @@ LOGOS = Path(__file__).resolve().parent / "logos"
 USERNAME = "JhulliansForero"
 LOGO_ORDER = ("java", "spring", "javascript", "react", "python")
 
-# Recorte de la foto: fracción del ancho que se usa y desde qué altura empieza.
-CROP_WIDTH = 0.70
-CROP_TOP = 0.05
+# Encuadre: ancho del recorte relativo a la silueta (1.0 = justo) y desplazamiento
+# vertical relativo a su altura (negativo = deja aire sobre la cabeza).
+CROP_WIDTH = 1.0
+CROP_TOP = -0.03
 
 YAML_ROWS = [
     (0, "profile", ""),
@@ -96,7 +97,7 @@ TRANSITION_SECONDS = 1.3
 LOGO_HOLD_SECONDS = 3.6
 TRAVELLERS = 900
 HOLD_PARTICLES = 2_400
-MAX_PORTRAIT_DOTS = 16_000
+GAMMA = 1.6
 SEED = 20260929
 FONT = "ui-monospace,SFMono-Regular,Consolas,monospace"
 
@@ -142,27 +143,35 @@ def dither(gray: np.ndarray) -> np.ndarray:
     return out
 
 
-def portrait_points(theme: str, rng: np.random.Generator) -> np.ndarray:
-    image = ImageOps.exif_transpose(Image.open(find_portrait())).convert("RGB")
+def portrait_points(theme: str) -> np.ndarray:
+    image = ImageOps.exif_transpose(Image.open(find_portrait())).convert("RGBA")
     w, h = image.size
-    crop_w = min(w, int(w * CROP_WIDTH))
-    crop_h = min(h, int(crop_w * GRID_H / GRID_W))
-    left = (w - crop_w) // 2
-    top = min(int(h * CROP_TOP), h - crop_h)
-    crop = image.crop((left, top, left + crop_w, top + crop_h))
-    gray = ImageOps.grayscale(crop.resize((GRID_W, GRID_H), Image.Resampling.LANCZOS))
+    # Con fondo transparente se encuadra la silueta; si no, la foto completa.
+    bx0, by0, bx1, by1 = image.getchannel("A").getbbox() or (0, 0, w, h)
+    crop_w = int((bx1 - bx0) * CROP_WIDTH)
+    crop_h = int(crop_w * GRID_H / GRID_W)
+    left = (bx0 + bx1 - crop_w) // 2
+    top = by0 + int((by1 - by0) * CROP_TOP)
+    crop = image.crop((left, top, left + crop_w, top + crop_h)).resize((GRID_W, GRID_H), Image.Resampling.LANCZOS)
+    alpha = np.asarray(crop.getchannel("A"), dtype=np.float32) / 255.0
+
+    backdrop = Image.new("RGBA", crop.size, "black" if theme == "dark" else "white")
+    backdrop.alpha_composite(crop)
+    gray = ImageOps.grayscale(backdrop.convert("RGB"))
     gray = ImageOps.autocontrast(gray, cutoff=1)
-    gray = ImageEnhance.Contrast(gray).enhance(1.3)
+    # Contraste local para marcar ojos, cejas y boca.
+    gray = gray.filter(ImageFilter.UnsharpMask(radius=18, percent=120, threshold=0))
+    # La curva quita medios tonos (menos puntos, más definición) en ambos temas.
+    tone = np.asarray(gray, dtype=np.float32) / 255.0
+    tone = tone ** GAMMA if theme == "dark" else 1 - (1 - tone) ** GAMMA
+    gray = Image.fromarray((tone * 255).astype("uint8"))
     gray = gray.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=1))
 
     bits = dither(np.asarray(gray))
     # En oscuro se encienden las zonas claras; en claro, las oscuras.
-    active = bits if theme == "dark" else ~bits
+    active = (bits if theme == "dark" else ~bits) & (alpha > 0.1)
     ys, xs = np.where(active)
-    points = np.column_stack((GRID_X + xs, GRID_Y + ys)).astype(np.float32)
-    if len(points) > MAX_PORTRAIT_DOTS:
-        points = points[rng.choice(len(points), MAX_PORTRAIT_DOTS, replace=False)]
-    return points
+    return np.column_stack((GRID_X + xs, GRID_Y + ys)).astype(np.float32)
 
 
 # --------------------------------------------------------------------------- #
@@ -420,7 +429,7 @@ def main() -> None:
     logos = load_logos()
     for index, theme in enumerate(THEMES):
         rng = np.random.default_rng(SEED + index)
-        portrait = portrait_points(theme, rng)
+        portrait = portrait_points(theme)
         svg = render(theme, portrait, logos, rng)
         out = ASSETS / f"banner-{theme}.svg"
         out.write_text(svg, encoding="utf-8")
