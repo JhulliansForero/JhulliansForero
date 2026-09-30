@@ -1,0 +1,12 @@
+{
+  "title": "SKILL RADAR",
+  "_comment": "Autoevaluación de 0 a 100. Edita los valores y vuelve a correr scripts/radar.py.",
+  "axes": [
+    {"label": "Java / POO", "value": 80},
+    {"label": "Spring Boot", "value": 65},
+    {"label": "Bases de datos", "value": 70},
+    {"label": "Frontend web", "value": 72},
+    {"label": "Git & GitHub", "value": 75},
+    {"label": "Testing", "value": 50}
+  ]
+}

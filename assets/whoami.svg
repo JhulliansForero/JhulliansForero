@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 390" width="960" height="390" role="img" aria-labelledby="title desc">
+  <title id="title">Jhullians Forero — Estudiante de Software</title>
+  <desc id="desc">Tarjeta estilo terminal verde con el perfil, la misión y las áreas de enfoque de Jhullians.</desc>
+  <defs>
+    <linearGradient id="edge" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#39FF8A"/>
+      <stop offset="1" stop-color="#5EEAD4"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-30%" width="140%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <path d="M0 0H4" stroke="#39FF8A" stroke-opacity=".05"/>
+    </pattern>
+  </defs>
+  <style>
+    text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .blink { animation: blink 1.1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+
+  <rect width="960" height="390" rx="18" fill="#050A07"/>
+  <rect x="9" y="9" width="942" height="372" rx="13" fill="none" stroke="url(#edge)" stroke-width="2"/>
+  <circle cx="35" cy="35" r="5" fill="#FF5F57"/>
+  <circle cx="54" cy="35" r="5" fill="#FEBC2E"/>
+  <circle cx="73" cy="35" r="5" fill="#28C840"/>
+  <text x="98" y="41" fill="#5F8A6E" font-size="15">JhulliansForero  ·  bash  ·  online</text>
+  <path d="M29 58H931" stroke="#1B3526"/>
+
+  <rect x="29" y="78" width="594" height="271" rx="9" fill="#08110C" stroke="#1F6B40" stroke-width="1.5"/>
+  <rect x="30" y="79" width="592" height="269" rx="9" fill="url(#scan)"/>
+  <text x="48" y="111" fill="#39FF8A" font-size="20" font-weight="700" filter="url(#glow)">❯ whoami</text>
+  <text x="48" y="143" fill="#D6F5DF" font-size="18">jhullians_forero</text>
+  <text x="228" y="143" fill="#5F8A6E" font-size="18">—</text>
+  <text x="253" y="143" fill="#5EEAD4" font-size="18">Estudiante de Software</text>
+
+  <path d="M48 166H604" stroke="#1B3526"/>
+  <text x="48" y="196" fill="#5F8A6E" font-size="17">mission:</text>
+  <text x="166" y="196" fill="#A7F3C8" font-size="17">construir software útil para negocios reales</text>
+  <text x="48" y="225" fill="#5F8A6E" font-size="17">mindset:</text>
+  <text x="166" y="225" fill="#A7F3C8" font-size="17">aprender haciendo, un commit a la vez</text>
+
+  <text x="48" y="267" fill="#39FF8A" font-size="20" font-weight="700" filter="url(#glow)">❯ ls expertise/</text>
+  <text x="48" y="299" fill="#5EEAD4" font-size="16">backend/</text>
+  <text x="178" y="299" fill="#D6F5DF" font-size="16">Java · Spring Boot · REST APIs · JPA</text>
+  <text x="48" y="326" fill="#5EEAD4" font-size="16">web/</text>
+  <text x="178" y="326" fill="#D6F5DF" font-size="16">JavaScript · React · HTML/CSS · PWA</text>
+
+  <rect x="651" y="78" width="280" height="271" rx="9" fill="#08110C" stroke="#1F6B40" stroke-width="1.5"/>
+  <text x="674" y="111" fill="#5EEAD4" font-size="17">system monitor</text>
+  <text x="674" y="146" fill="#5F8A6E" font-size="14">cpu   </text>
+  <rect x="728" y="135" width="180" height="12" rx="2" fill="#0B1811" stroke="#1B3526"/>
+  <rect x="728" y="135" width="150" height="12" rx="2" fill="#39FF8A" opacity=".85"/>
+  <text x="674" y="172" fill="#5F8A6E" font-size="14">coffee</text>
+  <rect x="728" y="161" width="180" height="12" rx="2" fill="#0B1811" stroke="#1B3526"/>
+  <rect x="728" y="161" width="172" height="12" rx="2" fill="#5EEAD4" opacity=".85"/>
+  <text x="674" y="198" fill="#5F8A6E" font-size="14">bugs  </text>
+  <rect x="728" y="187" width="180" height="12" rx="2" fill="#0B1811" stroke="#1B3526"/>
+  <rect x="728" y="187" width="42" height="12" rx="2" fill="#FEBC2E" opacity=".85"/>
+  <path d="M674 262 L700 262 L710 236 L722 288 L734 222 L746 262 L790 262 L800 246 L810 262 L850 262 L860 230 L872 290 L884 262 L908 262"
+        fill="none" stroke="#39FF8A" stroke-width="2.5" stroke-linejoin="round" filter="url(#glow)"/>
+  <text x="674" y="326" fill="#5F8A6E" font-size="14">status: aprendiendo siempre</text>
+  <rect class="blink" x="904" y="314" width="9" height="16" fill="#39FF8A"/>
+</svg>
