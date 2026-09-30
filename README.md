@@ -46,9 +46,8 @@
         <sub><code>Java 17 · Spring Boot · Maven · Python</code></sub>
       </td>
       <td width="50%" valign="top"><code>├─ ▣ databases:</code><br><br>
-        <img src="https://skillicons.dev/icons?i=postgres,mysql" alt="PostgreSQL y MySQL">
-        <img src="https://cdn.simpleicons.org/h2database/39ff8a?viewbox=auto" height="48" alt="H2 Database"><br>
-        <sub><code>PostgreSQL · MySQL · H2 · JPA/Hibernate</code></sub>
+        <img src="https://skillicons.dev/icons?i=postgres" alt="PostgreSQL"><br>
+        <sub><code>PostgreSQL · JPA/Hibernate</code></sub>
       </td>
     </tr>
     <tr>

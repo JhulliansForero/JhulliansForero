@@ -53,7 +53,7 @@ YAML_ROWS = [
     (0, "stack", ""),
     (1, "backend", "Java 17 · Spring Boot · JPA"),
     (1, "frontend", "JavaScript · React · HTML/CSS"),
-    (1, "databases", "PostgreSQL · H2 · MySQL"),
+    (1, "databases", "PostgreSQL"),
     (1, "tooling", "Maven · Git · GitHub"),
     (1, "scripting", "Python · Bash"),
     (0, "learning", ""),
