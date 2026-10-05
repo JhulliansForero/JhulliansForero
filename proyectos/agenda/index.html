@@ -1,0 +1,863 @@
+<title>Agenda de Jhullians</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen phone app — header, scrolling view, bottom tab bar; sheets slide up from the bottom. */
+:root {
+  --bg: #eef2f0;
+  --surface: #ffffff;
+  --surface-2: #e3e9e6;
+  --ink: #14211c;
+  --muted: #5a6b64;
+  --line: #d3ddd8;
+  --accent: #0d7a52;
+  --accent-ink: #ffffff;
+  --accent-soft: #d5efe3;
+  --danger: #b4382c;
+  --c-estudio: #2f63c9;
+  --c-practica: #b97a06;
+  --c-personal: #8752c8;
+  --c-salud: #cc4b3c;
+  --c-otro: #66746e;
+  --shadow: 0 10px 30px rgba(20, 33, 28, .14);
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1614; --surface: #17211e; --surface-2: #1f2b27; --ink: #e6efeb; --muted: #94a69e;
+    --line: #2a3833; --accent: #45d398; --accent-ink: #062418; --accent-soft: #173b2d; --danger: #f07a6c;
+    --c-estudio: #6f9cf5; --c-practica: #e3ac3c; --c-personal: #b58cf0; --c-salud: #f0806f; --c-otro: #93a29b;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1614; --surface: #17211e; --surface-2: #1f2b27; --ink: #e6efeb; --muted: #94a69e;
+  --line: #2a3833; --accent: #45d398; --accent-ink: #062418; --accent-soft: #173b2d; --danger: #f07a6c;
+  --c-estudio: #6f9cf5; --c-practica: #e3ac3c; --c-personal: #b58cf0; --c-salud: #f0806f; --c-otro: #93a29b;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+html { height: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; max-width: 560px; margin: 0 auto; position: relative; }
+
+/* Header */
+.top { padding: 14px 16px 10px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.brand { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.brand b { color: var(--accent); }
+.today-big { font-family: var(--f-display); font-weight: 800; font-size: 26px; line-height: 1.05; letter-spacing: -.01em; text-wrap: balance; margin: 2px 0 0; }
+.sync { font-family: var(--f-mono); font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.sync i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.sync.ok i { background: var(--accent); }
+.sync.err i { background: var(--danger); }
+
+/* Views */
+main { min-height: 0; position: relative; }
+.view { position: absolute; inset: 0; overflow-y: auto; padding: 4px 16px 96px; }
+.view[hidden] { display: none !important; }
+.notice { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--muted); margin-block: 8px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.notice button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 13px; }
+
+.section-h { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 0 8px; gap: 8px; }
+.section-h h2 { font-family: var(--f-display); font-weight: 600; font-size: 17px; margin: 0; }
+.section-h span { font-size: 12px; color: var(--muted); font-family: var(--f-mono); }
+
+/* Progress summary */
+.summary { background: var(--surface); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 10px; border: 1px solid var(--line); }
+.summary-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.summary-num { font-family: var(--f-display); font-weight: 800; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+.summary-num small { font-size: 15px; font-weight: 600; color: var(--muted); }
+.summary-txt { color: var(--muted); font-size: 13px; text-align: right; }
+.bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+
+/* Activity list */
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.act { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; position: relative; }
+.act::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; background: var(--cat, var(--c-otro)); }
+.act.done .t { text-decoration: line-through; color: var(--muted); }
+.chk { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--cat, var(--c-otro)); background: transparent; display: grid; place-items: center; padding: 0; margin-top: 1px; }
+.chk svg { width: 15px; height: 15px; opacity: 0; }
+.act.done .chk { background: var(--cat, var(--c-otro)); }
+.act.done .chk svg { opacity: 1; }
+.chk svg path { stroke: var(--surface); }
+.act-body { min-width: 0; background: none; border: 0; padding: 0; text-align: left; display: grid; gap: 3px; }
+.t { font-weight: 600; overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; color: var(--muted); align-items: center; }
+.time { font-family: var(--f-mono); font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tag { display: inline-flex; align-items: center; gap: 5px; }
+.tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--cat, var(--c-otro)); }
+.by-claude { color: var(--accent); font-weight: 600; }
+.act.g { background: transparent; border-style: dashed; grid-template-columns: auto 1fr; }
+.act.g::before { display: none; }
+.gdot { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-family: var(--f-mono); font-size: 11px; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+.act.g a { color: inherit; text-decoration: none; min-width: 0; display: grid; gap: 3px; }
+
+.empty { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 18px 16px; color: var(--muted); font-size: 14px; display: grid; gap: 10px; }
+.empty strong { color: var(--ink); font-family: var(--f-display); font-weight: 600; font-size: 16px; }
+
+.day-group { display: grid; gap: 6px; }
+.day-label { font-size: 12px; font-family: var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+
+.ask-card { margin-top: 20px; background: var(--accent-soft); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 8px; }
+.ask-card p { margin: 0; font-size: 14px; }
+.ask-card button { justify-self: start; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 700; }
+
+/* Calendar */
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 10px; }
+.cal-head h2 { font-family: var(--f-display); font-weight: 800; font-size: 21px; margin: 0; }
+.cal-nav { display: flex; gap: 6px; }
+.icon-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; padding: 0; }
+.icon-btn svg { width: 18px; height: 18px; }
+.chip-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 0 12px; height: 38px; font-weight: 600; font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.dow { text-align: center; font-family: var(--f-mono); font-size: 11px; color: var(--muted); padding-bottom: 4px; }
+.cell { aspect-ratio: 1 / 1.08; max-width: 100%; border-radius: 10px; border: 1px solid transparent; background: var(--surface); padding: 5px 0 0; display: grid; grid-template-rows: auto 1fr; justify-items: center; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
+.cell.out { background: transparent; color: var(--muted); opacity: .55; }
+.cell.today .n { background: var(--accent); color: var(--accent-ink); }
+.cell.sel { border-color: var(--ink); }
+.cell .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; }
+.dots { display: flex; gap: 3px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 0 2px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--cat, var(--c-otro)); }
+.dots i.gd { background: transparent; border: 1.5px solid var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+/* Chat */
+.chat { display: flex; flex-direction: column; padding-bottom: 0; }
+.msgs { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
+.msg { max-width: 88%; padding: 10px 13px; border-radius: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.me { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 5px; }
+.msg.ai { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.msg.err { align-self: flex-start; background: transparent; border: 1px dashed var(--danger); color: var(--danger); font-size: 13px; }
+.msg .who { display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.changes { margin-top: 8px; display: grid; gap: 4px; font-size: 13px; white-space: normal; }
+.changes div { display: flex; gap: 6px; align-items: baseline; }
+.changes b { font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-weight: 500; min-width: 64px; }
+.thinking { display: inline-flex; gap: 4px; }
+.thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+.thinking i:nth-child(2) { animation-delay: .2s; } .thinking i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25 } 40% { opacity: 1 } }
+.sugs { display: flex; flex-wrap: wrap; gap: 6px; }
+.sugs button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 12px; font-size: 13px; text-align: left; }
+.composer { position: sticky; bottom: 0; background: var(--bg); padding: 8px 0 12px; display: flex; gap: 8px; align-items: flex-end; }
+.composer textarea { flex: 1; min-width: 0; resize: none; border: 1px solid var(--line); background: var(--surface); border-radius: 18px; padding: 10px 14px; max-height: 140px; line-height: 1.35; }
+.send { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; flex: none; padding: 0; }
+.send svg { width: 20px; height: 20px; }
+.send.stop { background: var(--ink); color: var(--bg); }
+
+/* Bottom nav + FAB */
+nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); }
+nav.tabs button { border: 0; background: none; display: grid; justify-items: center; gap: 2px; padding: 6px 0; font-size: 12px; font-weight: 600; color: var(--muted); border-radius: 12px; }
+nav.tabs button svg { width: 22px; height: 22px; }
+nav.tabs button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.fab { position: absolute; right: 16px; bottom: 16px; width: 56px; height: 56px; border-radius: 18px; border: 0; background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow); display: grid; place-items: center; z-index: 5; padding: 0; }
+.fab svg { width: 26px; height: 26px; }
+.fab[hidden] { display: none !important; }
+
+/* Sheet */
+.scrim { position: fixed; inset: 0; background: rgba(8, 14, 12, .45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 560px; max-height: 92%; overflow-y: auto; background: var(--surface); border-radius: 20px 20px 0 0; padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; box-shadow: var(--shadow); animation: up .22s ease-out; }
+@keyframes up { from { transform: translateY(24px); opacity: .6 } to { transform: none; opacity: 1 } }
+.grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); justify-self: center; }
+.sheet h3 { font-family: var(--f-display); font-weight: 800; font-size: 20px; margin: 0; }
+.field { display: grid; gap: 5px; }
+.field label, .field .lbl { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.field input, .field textarea, .field select { width: 100%; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+.row3 { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
+.row3 > * { min-width: 0; }
+.cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.cats button { border: 1.5px solid var(--line); background: var(--bg); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+.cats button i { width: 8px; height: 8px; border-radius: 50%; background: var(--cat); }
+.cats button[aria-pressed="true"] { border-color: var(--cat); background: var(--surface); }
+.sheet-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+.btn { border-radius: 999px; padding: 10px 18px; font-weight: 700; border: 1px solid var(--line); background: var(--surface); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--danger); border-color: transparent; background: transparent; padding-inline: 4px; }
+.btn.danger.confirm { background: var(--danger); color: var(--surface); padding-inline: 16px; }
+.gbtn { width: 100%; border: 1px dashed var(--line); background: transparent; border-radius: 12px; padding: 10px 12px; font-weight: 600; font-size: 13px; text-align: left; display: flex; gap: 8px; align-items: center; }
+.gbtn a { color: var(--accent); }
+.small { font-size: 12px; color: var(--muted); }
+
+/* Toast */
+.toast { position: absolute; left: 16px; right: 16px; bottom: 84px; z-index: 30; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 14px; box-shadow: var(--shadow); }
+.toast[hidden] { display: none; }
+.toast button { background: none; border: 0; color: var(--accent-soft); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="brand"><b>●</b> Agenda de Jhullians</div>
+      <h1 class="today-big" id="todayBig">Hoy</h1>
+    </div>
+    <div class="sync" id="sync" title="Estado de guardado"><i></i><span>conectando…</span></div>
+  </header>
+
+  <main>
+    <section class="view" id="v-hoy" aria-label="Hoy"></section>
+    <section class="view" id="v-cal" aria-label="Calendario" hidden></section>
+    <section class="view chat" id="v-chat" aria-label="Claude" hidden>
+      <div class="msgs" id="msgs"></div>
+      <form class="composer" id="composer">
+        <textarea id="ask" rows="1" placeholder="Ej: tengo parcial de Java el jueves, ármame horas de estudio" aria-label="Mensaje para Claude"></textarea>
+        <button class="send" id="sendBtn" type="submit" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+    </section>
+    <button class="fab" id="fab" aria-label="Nueva actividad">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="toast" id="toast" hidden><span id="toastTxt"></span><button id="toastBtn" type="button">Deshacer</button></div>
+  </main>
+
+  <nav class="tabs" aria-label="Secciones">
+    <button data-tab="hoy" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2.5 2.5L16 9"/><rect x="3.5" y="3.5" width="17" height="17" rx="4"/></svg>Hoy
+    </button>
+    <button data-tab="cal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendario
+    </button>
+    <button data-tab="chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.5 2.5M15.2 15.2l2.5 2.5M6.3 17.7l2.5-2.5M15.2 8.8l2.5-2.5"/></svg>Claude
+    </button>
+  </nav>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Constants & helpers ----------
+  const CATS = {
+    estudio: "Estudio", practica: "Práctica", personal: "Personal", salud: "Salud", otro: "Otro",
+  };
+  const GCAL = "Google Calendar";
+  const TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Bogota"; } catch { return "America/Bogota"; } })();
+  const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const SEND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
+  const STOP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
+
+  const $ = (s) => document.querySelector(s);
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "style") el.setAttribute("style", v);
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else if (k === "html") el.innerHTML = v;
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : String(kid));
+    return el;
+  }
+  const pad = (n) => String(n).padStart(2, "0");
+  const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parseYmd = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const fmtLong = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long" });
+  const fmtShort = new Intl.DateTimeFormat("es-CO", { weekday: "short", day: "numeric", month: "short" });
+  const fmtMonth = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric" });
+  const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(parseYmd(s));
+  const isTime = (s) => typeof s === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+  const catVar = (c) => `--cat: var(--c-${CATS[c] ? c : "otro"})`;
+  const todayStr = () => ymd(new Date());
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } }
+
+  // ---------- State ----------
+  const state = {
+    tab: "hoy",
+    acts: [],
+    loaded: false,
+    dbErr: "",
+    month: (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })(),
+    selected: todayStr(),
+    gEvents: [],
+    gStatus: "off", // off | prompt | loading | on | error | unavailable
+    gMsg: "",
+  };
+  let db = null, sample = null, mcp = null, perms = null;
+
+  // ---------- Activities ----------
+  function sortActs(a, b) {
+    return (a.date || "").localeCompare(b.date || "") ||
+      ((a.start || "") === "" ? -1 : 0) - ((b.start || "") === "" ? -1 : 0) ||
+      (a.start || "").localeCompare(b.start || "") ||
+      (a.title || "").localeCompare(b.title || "");
+  }
+  const actsOn = (date) => state.acts.filter((a) => a.date === date).sort(sortActs);
+  function gOn(date) {
+    const linked = new Set(state.acts.map((a) => a.gcalId).filter(Boolean));
+    return state.gEvents.filter((e) => e.dates.includes(date) && !linked.has(e.id));
+  }
+  function timeLabel(a) {
+    if (!a.start) return "Todo el día";
+    return a.end ? `${a.start}–${a.end}` : a.start;
+  }
+
+  function actItem(a) {
+    const li = h("li", { class: "act" + (a.done ? " done" : ""), style: catVar(a.category) },
+      h("button", {
+        class: "chk", "aria-pressed": a.done ? "true" : "false",
+        "aria-label": (a.done ? "Marcar pendiente: " : "Marcar hecha: ") + (a.title || ""),
+        html: CHECK_SVG, onclick: () => toggleDone(a),
+      }),
+      h("button", { class: "act-body", onclick: () => openSheet(a) },
+        h("span", { class: "t" }, a.title || "(sin título)"),
+        h("span", { class: "meta" },
+          h("span", { class: "time" }, timeLabel(a)),
+          h("span", { class: "tag" }, h("i"), CATS[a.category] || "Otro"),
+          a.source === "claude" ? h("span", { class: "by-claude" }, "✦ Claude") : null,
+          a.gcalId ? h("span", null, "· en Google") : null,
+        ),
+      ),
+    );
+    return li;
+  }
+  function gItem(e) {
+    return h("li", { class: "act g" },
+      h("span", { class: "gdot", "aria-hidden": "true" }, "G"),
+      h("a", { href: e.link || "https://calendar.google.com", target: "_blank", rel: "noopener" },
+        h("span", { class: "t" }, e.title),
+        h("span", { class: "meta" },
+          h("span", { class: "time" }, e.allDay ? "Todo el día" : e.end ? `${e.start}–${e.end}` : e.start),
+          h("span", null, "Google Calendar"),
+        ),
+      ),
+    );
+  }
+  function dayList(date) {
+    const items = [...actsOn(date).map(actItem)];
+    const g = gOn(date).map(gItem);
+    return h("ul", { class: "list" }, items, g);
+  }
+
+  // ---------- Render: Hoy ----------
+  function renderHoy() {
+    const v = $("#v-hoy");
+    const today = todayStr();
+    const mine = actsOn(today);
+    const done = mine.filter((a) => a.done).length;
+    const g = gOn(today);
+    const kids = [];
+
+    if (!db) kids.push(h("div", { class: "notice" }, h("span", null, state.dbErr || "Conectando con tu agenda…")));
+
+    const total = mine.length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    kids.push(h("div", { class: "summary" },
+      h("div", { class: "summary-row" },
+        h("div", { class: "summary-num" }, String(done), h("small", null, ` / ${total} hechas`)),
+        h("div", { class: "summary-txt" },
+          total === 0 ? "Día libre por ahora" : done === total ? "¡Todo listo por hoy!" : `${total - done} pendiente${total - done === 1 ? "" : "s"}`,
+          g.length ? h("br") : null, g.length ? `${g.length} evento${g.length === 1 ? "" : "s"} de Google` : null),
+      ),
+      h("div", { class: "bar", role: "progressbar", "aria-valuenow": pct, "aria-valuemin": 0, "aria-valuemax": 100 }, h("i", { style: `width:${pct}%` })),
+    ));
+
+    kids.push(h("div", { class: "section-h" }, h("h2", null, "Hoy"), h("span", null, today)));
+    if (!state.loaded && db) kids.push(h("div", { class: "empty" }, "Cargando tus actividades…"));
+    else if (!mine.length && !g.length) kids.push(h("div", { class: "empty" },
+      h("strong", null, "Nada para hoy todavía"),
+      h("span", null, "Toca + para agregar una actividad, o cuéntale a Claude qué tienes que hacer y él la pone aquí."),
+    ));
+    else kids.push(dayList(today));
+
+    // Next 7 days
+    const groups = [];
+    for (let i = 1; i <= 7; i++) {
+      const d = ymd(addDays(new Date(), i));
+      const a = actsOn(d), ge = gOn(d);
+      if (a.length || ge.length) groups.push(h("div", { class: "day-group" },
+        h("div", { class: "day-label" }, cap(fmtShort.format(parseYmd(d)))),
+        h("ul", { class: "list" }, a.map(actItem), ge.map(gItem)),
+      ));
+    }
+    kids.push(h("div", { class: "section-h" }, h("h2", null, "Próximos 7 días"), h("span", null, groups.length ? "" : "sin nada")));
+    if (groups.length) kids.push(...groups);
+    else kids.push(h("div", { class: "empty" }, "Tu semana está despejada. Pídele a Claude que te ayude a planearla."));
+
+    kids.push(h("div", { class: "ask-card" },
+      h("p", null, h("b", null, "Habla con Claude. "), "Dile algo como “ármame la semana con 1 hora diaria de Spring Boot” y él crea las actividades en tu calendario."),
+      h("button", { type: "button", onclick: () => setTab("chat") }, "Abrir chat con Claude"),
+    ));
+    v.replaceChildren(...kids);
+  }
+
+  // ---------- Render: Calendario ----------
+  function gridStart(month) { const d = new Date(month); const dow = (d.getDay() + 6) % 7; return addDays(d, -dow); }
+  function renderCal() {
+    const v = $("#v-cal");
+    const m = state.month;
+    const start = gridStart(m);
+    const today = todayStr();
+    const head = h("div", { class: "cal-head" },
+      h("h2", null, cap(fmtMonth.format(m))),
+      h("div", { class: "cal-nav" },
+        h("button", { class: "chip-btn", type: "button", onclick: () => { const d = new Date(); state.month = new Date(d.getFullYear(), d.getMonth(), 1); state.selected = today; refreshGcal(); render(); } }, "Hoy"),
+        h("button", { class: "icon-btn", type: "button", "aria-label": "Mes anterior", onclick: () => shiftMonth(-1), html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>' }),
+        h("button", { class: "icon-btn", type: "button", "aria-label": "Mes siguiente", onclick: () => shiftMonth(1), html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>' }),
+      ),
+    );
+    const grid = h("div", { class: "grid", role: "grid" });
+    ["L", "M", "M", "J", "V", "S", "D"].forEach((d) => grid.append(h("div", { class: "dow", "aria-hidden": "true" }, d)));
+    for (let i = 0; i < 42; i++) {
+      const d = addDays(start, i);
+      const ds = ymd(d);
+      const a = actsOn(ds), ge = gOn(ds);
+      const dots = h("span", { class: "dots" });
+      a.slice(0, 4).forEach((x) => dots.append(h("i", { style: catVar(x.category) })));
+      if (ge.length && a.length < 4) dots.append(h("i", { class: "gd" }));
+      const cls = ["cell", d.getMonth() !== m.getMonth() ? "out" : "", ds === today ? "today" : "", ds === state.selected ? "sel" : ""].join(" ");
+      grid.append(h("button", {
+        class: cls, type: "button",
+        "aria-label": `${fmtLong.format(d)}: ${a.length} actividades${ge.length ? `, ${ge.length} de Google` : ""}`,
+        "aria-pressed": ds === state.selected ? "true" : "false",
+        onclick: () => { state.selected = ds; if (d.getMonth() !== m.getMonth()) { state.month = new Date(d.getFullYear(), d.getMonth(), 1); refreshGcal(); } render(); },
+      }, h("span", { class: "n" }, String(d.getDate())), dots));
+    }
+    const legend = h("div", { class: "legend" },
+      Object.entries(CATS).map(([k, l]) => h("span", { class: "tag", style: catVar(k) }, h("i"), l)),
+      h("span", { class: "tag" }, h("i", { style: "background:transparent;border:1.5px solid var(--muted)" }), "Google"),
+    );
+
+    const sel = state.selected;
+    const selActs = actsOn(sel), selG = gOn(sel);
+    const kids = [head, grid, legend, gcalNotice(),
+      h("div", { class: "section-h" }, h("h2", null, cap(fmtLong.format(parseYmd(sel)))), h("span", null, `${selActs.length + selG.length} en total`)),
+      selActs.length || selG.length ? dayList(sel) : h("div", { class: "empty" }, "Nada este día. Toca + para agregar algo."),
+    ];
+    v.replaceChildren(...kids.filter(Boolean));
+  }
+  function shiftMonth(n) {
+    state.month = new Date(state.month.getFullYear(), state.month.getMonth() + n, 1);
+    state.selected = ymd(state.month.getMonth() === new Date().getMonth() && state.month.getFullYear() === new Date().getFullYear() ? new Date() : state.month);
+    refreshGcal();
+    render();
+  }
+
+  // ---------- Google Calendar ----------
+  let gUnsub = null;
+  function gcalNotice() {
+    const s = state.gStatus;
+    if (s === "on" || s === "unavailable") return null;
+    if (s === "prompt" || s === "off") {
+      if (!mcp) return null;
+      return h("div", { class: "notice" },
+        h("span", null, "Ve también tus eventos de Google Calendar aquí."),
+        h("button", { type: "button", onclick: () => { store("gcal", "1"); startGcal(); } }, "Conectar Google"));
+    }
+    if (s === "loading") return h("div", { class: "notice" }, h("span", null, "Trayendo tus eventos de Google Calendar…"));
+    if (s === "error") return h("div", { class: "notice" }, h("span", null, state.gMsg),
+      perms && state.gCode === "not_in_manifest" ? h("button", { type: "button", onclick: () => perms.manage().then(() => startGcal(), () => {}) }, "Permisos") : null);
+    return null;
+  }
+  function gRange() {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const gs = gridStart(state.month);
+    const from = gs < today ? gs : today;
+    const ge = addDays(gs, 42);
+    const wk = addDays(today, 8);
+    return { from, to: ge > wk ? ge : wk };
+  }
+  function mapEvent(e) {
+    const s = e.start || {}, en = e.end || {};
+    let dates = [], allDay = false, start = "", end = "";
+    if (s.dateTime) {
+      const d = s.dateTime.slice(0, 10);
+      dates = [d]; start = s.dateTime.slice(11, 16);
+      if (en.dateTime && en.dateTime.slice(0, 10) === d) end = en.dateTime.slice(11, 16);
+    } else if (s.date) {
+      allDay = true;
+      let d = parseYmd(s.date);
+      const stop = en.date ? parseYmd(en.date) : addDays(d, 1);
+      for (let i = 0; i < 31 && d < stop; i++) { dates.push(ymd(d)); d = addDays(d, 1); }
+    }
+    return { id: String(e.id || ""), title: String(e.summary || "(sin título)"), link: typeof e.htmlLink === "string" ? e.htmlLink : "", dates, allDay, start, end };
+  }
+  const G_ERR = {
+    needs_reauth: "Tu conexión con Google Calendar expiró. Reconéctala en claude.ai → Ajustes → Conectores.",
+    server_not_connected: "Agrega Google Calendar en claude.ai → Ajustes → Conectores para ver tus eventos aquí.",
+    selection_required: "Elige cuál conexión de Google Calendar usar en el aviso de Claude.",
+    not_in_manifest: "No diste permiso para leer Google Calendar en esta app.",
+    blocked_by_policy: "Tu organización no permite usar Google Calendar aquí.",
+    approval_required: "Google Calendar necesita una aprobación que esta app no puede pedir.",
+  };
+  function startGcal() {
+    if (!mcp) return;
+    gUnsub?.();
+    const { from, to } = gRange();
+    state.gStatus = state.gEvents.length ? "on" : "loading";
+    render();
+    gUnsub = mcp.watchTool(GCAL, "list_events",
+      { startTime: from.toISOString(), endTime: to.toISOString(), pageSize: 250, orderBy: "startTime" },
+      (ev) => {
+        if (ev.type === "data") {
+          const p = ev.result && ev.result.payload;
+          const list = p && Array.isArray(p.events) ? p.events : [];
+          state.gEvents = list.filter((e) => e && e.status !== "cancelled").map(mapEvent).filter((e) => e.dates.length);
+          state.gStatus = "on";
+        } else {
+          const code = ev.error && ev.error.code;
+          if (G_ERR[code]) { state.gEvents = []; state.gStatus = "error"; state.gCode = code; state.gMsg = G_ERR[code]; }
+          else if (!state.gEvents.length) { state.gStatus = "error"; state.gCode = code; state.gMsg = "No pude traer tus eventos de Google ahora. Vuelve a intentarlo en un rato."; }
+        }
+        render();
+      });
+  }
+  function refreshGcal() { if (state.gStatus === "on" || state.gStatus === "loading") startGcal(); }
+
+  async function pushToGoogle(a, btn) {
+    if (!mcp || !db) return;
+    btn.disabled = true; btn.textContent = "Enviando a Google Calendar…";
+    const input = { summary: a.title, timeZone: TZ, description: (a.notes ? a.notes + "\n\n" : "") + "Creado desde la Agenda de Jhullians." };
+    if (a.start) {
+      let end = a.end;
+      if (!end || end <= a.start) { const [hh, mm] = a.start.split(":").map(Number); const t = Math.min(hh * 60 + mm + 60, 23 * 60 + 59); end = `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; }
+      input.startTime = `${a.date}T${a.start}:00`; input.endTime = `${a.date}T${end}:00`;
+    } else {
+      input.allDay = true; input.startTime = `${a.date}T00:00:00`; input.endTime = `${ymd(addDays(parseYmd(a.date), 1))}T00:00:00`;
+    }
+    try {
+      const res = await mcp.callTool(GCAL, "create_event", input);
+      const p = res && res.payload;
+      const upd = { gcalId: (p && (p.id || (p.event && p.event.id))) || "creado", gcalLink: (p && (p.htmlLink || (p.event && p.event.htmlLink))) || "" };
+      await db.doc("activities/" + a.id).update(upd);
+      mcp.invalidate(GCAL, "list_events").catch(() => {});
+      btn.textContent = "Listo, ya está en Google Calendar ✓";
+      if (state.gStatus === "off" || state.gStatus === "prompt") { store("gcal", "1"); startGcal(); }
+    } catch (e) {
+      btn.disabled = false;
+      const code = e && e.code;
+      btn.textContent = G_ERR[code] || (code === "server_unavailable" || code === "upstream_error"
+        ? "Google no respondió. Revisa tu calendario antes de intentarlo otra vez para no duplicar."
+        : "No se pudo crear el evento en Google. Toca para intentar de nuevo.");
+    }
+  }
+
+  // ---------- Writes ----------
+  async function toggleDone(a) {
+    if (!db) return;
+    try { await db.doc("activities/" + a.id).update({ done: !a.done }); }
+    catch (e) { toast("No se pudo guardar el cambio."); }
+  }
+
+  // ---------- Sheet (add / edit) ----------
+  function openSheet(a) {
+    const editing = !!(a && a.id);
+    const data = Object.assign({ title: "", date: state.tab === "cal" ? state.selected : todayStr(), start: "", end: "", category: "estudio", notes: "", done: false }, a || {});
+    let cat = CATS[data.category] ? data.category : "otro";
+    const title = h("input", { id: "f-title", type: "text", maxlength: "120", value: data.title, placeholder: "Ej: Repasar Spring Boot", autocomplete: "off" });
+    const date = h("input", { id: "f-date", type: "date", value: data.date });
+    const st = h("input", { id: "f-start", type: "time", value: data.start || "" });
+    const en = h("input", { id: "f-end", type: "time", value: data.end || "" });
+    const notes = h("textarea", { id: "f-notes", rows: "3", maxlength: "1000", placeholder: "Detalles, enlaces, lo que necesites recordar" });
+    notes.value = data.notes || "";
+    const catsEl = h("div", { class: "cats", role: "group", "aria-label": "Categoría" });
+    const drawCats = () => catsEl.replaceChildren(...Object.entries(CATS).map(([k, l]) =>
+      h("button", { type: "button", style: catVar(k), "aria-pressed": k === cat ? "true" : "false", onclick: () => { cat = k; drawCats(); } }, h("i"), l)));
+    drawCats();
+
+    const err = h("div", { class: "small", style: "color:var(--danger)", hidden: true });
+    const save = h("button", { class: "btn primary", type: "submit" }, editing ? "Guardar" : "Agregar");
+    let confirmDel = false;
+    const del = editing ? h("button", { class: "btn danger", type: "button", onclick: async () => {
+      if (!confirmDel) { confirmDel = true; del.classList.add("confirm"); del.textContent = "¿Eliminar? Toca otra vez"; return; }
+      close();
+      const copy = { ...a }; delete copy.id;
+      try { await db.doc("activities/" + a.id).delete(); toast(`Eliminaste “${a.title}”`, async () => { await db.doc("activities/" + a.id).set(copy); }); }
+      catch { toast("No se pudo eliminar."); }
+    } }, "Eliminar") : h("span");
+
+    let gRow = null;
+    if (editing && mcp) {
+      if (a.gcalId) gRow = h("div", { class: "gbtn" }, "✓ Ya está en Google Calendar", a.gcalLink ? h("a", { href: a.gcalLink, target: "_blank", rel: "noopener" }, "Abrir") : null);
+      else { const b = h("button", { class: "gbtn", type: "button" }, "＋ Agregar también a Google Calendar"); b.addEventListener("click", () => pushToGoogle(a, b)); gRow = b; }
+    }
+
+    const form = h("form", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-label": editing ? "Editar actividad" : "Nueva actividad" },
+      h("div", { class: "grab" }),
+      h("h3", null, editing ? "Editar actividad" : "Nueva actividad"),
+      h("div", { class: "field" }, h("label", { for: "f-title" }, "Qué vas a hacer"), title),
+      h("div", { class: "row3" },
+        h("div", { class: "field" }, h("label", { for: "f-date" }, "Día"), date),
+        h("div", { class: "field" }, h("label", { for: "f-start" }, "Desde"), st),
+        h("div", { class: "field" }, h("label", { for: "f-end" }, "Hasta"), en),
+      ),
+      h("div", { class: "field" }, h("span", { class: "lbl" }, "Categoría"), catsEl),
+      h("div", { class: "field" }, h("label", { for: "f-notes" }, "Notas"), notes),
+      editing && a.source === "claude" ? h("div", { class: "small" }, "✦ Creada por Claude") : null,
+      gRow, err,
+      h("div", { class: "sheet-actions" }, del, h("div", { style: "display:flex;gap:8px" }, h("button", { class: "btn", type: "button", onclick: () => close() }, "Cancelar"), save)),
+    );
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const t = title.value.trim();
+      if (!t) { err.hidden = false; err.textContent = "Escribe qué vas a hacer."; title.focus(); return; }
+      if (!isDate(date.value)) { err.hidden = false; err.textContent = "Elige un día."; return; }
+      if (en.value && !st.value) { err.hidden = false; err.textContent = "Si pones hora de fin, pon también la de inicio."; return; }
+      if (!db) { err.hidden = false; err.textContent = "Abre la app desde claude.ai para guardar."; return; }
+      const body = { title: t, date: date.value, start: st.value || "", end: en.value || "", category: cat, notes: notes.value.trim() };
+      save.disabled = true;
+      try {
+        if (editing) await db.doc("activities/" + a.id).update(body);
+        else await db.collection("activities").add({ ...body, done: false, source: "tú", createdAt: Date.now() });
+        state.selected = body.date;
+        close();
+      } catch (e) {
+        save.disabled = false; err.hidden = false;
+        err.textContent = e && e.code === "quota_exceeded" ? "Llegaste al límite de actividades guardadas. Elimina algunas antiguas." : "No se pudo guardar. Inténtalo de nuevo.";
+      }
+    });
+    const scrim = h("div", { class: "scrim", onclick: (e) => { if (e.target === scrim) close(); } }, form);
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    function close() { scrim.remove(); document.removeEventListener("keydown", onKey); }
+    document.addEventListener("keydown", onKey);
+    document.body.append(scrim);
+    if (!editing) setTimeout(() => title.focus(), 50);
+  }
+
+  // ---------- Toast ----------
+  let toastTimer = null, toastUndo = null;
+  function toast(text, undo) {
+    $("#toastTxt").textContent = text;
+    toastUndo = undo || null;
+    $("#toastBtn").hidden = !undo;
+    $("#toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $("#toast").hidden = true; toastUndo = null; }, undo ? 7000 : 3500);
+  }
+  $("#toastBtn").addEventListener("click", async () => {
+    const u = toastUndo; $("#toast").hidden = true; toastUndo = null;
+    if (u) { try { await u(); toast("Listo, lo recuperé."); } catch { toast("No se pudo deshacer."); } }
+  });
+
+  // ---------- Chat with Claude ----------
+  const history = []; // {role, content}
+  let busy = null; // AbortController
+  const SUGS = [
+    "Tengo parcial de Java el jueves, ármame horas de estudio antes",
+    "Agrega gimnasio lunes, miércoles y viernes a las 6 am",
+    "¿Qué tengo mañana?",
+    "Organiza mi semana: práctica en la Alcaldía de 8 a 12 entre semana",
+  ];
+  function chatIntro() {
+    const box = $("#msgs");
+    box.replaceChildren(
+      h("div", { class: "msg ai" }, h("span", { class: "who" }, "Claude"),
+        "Hola Jhullians. Cuéntame qué tienes que hacer y yo lo organizo en tu agenda: creo las actividades, les pongo hora y las acomodo en el calendario. También puedo mover, completar o borrar las que ya tienes."),
+      h("div", { class: "sugs" }, SUGS.map((s) => h("button", { type: "button", onclick: () => { $("#ask").value = s; send(); } }, s))),
+    );
+  }
+  function addMsg(cls, text, extra) {
+    const el = h("div", { class: "msg " + cls }, cls === "ai" ? h("span", { class: "who" }, "Claude") : null, text, extra || null);
+    $("#msgs").append(el);
+    scrollChat();
+    return el;
+  }
+  function scrollChat() { const v = $("#v-chat"); requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; }); }
+
+  function buildRules() {
+    const now = new Date();
+    const days = [];
+    for (let i = 0; i < 21; i++) { const d = addDays(now, i); days.push(`${fmtShort.format(d)} = ${ymd(d)}`); }
+    const lo = ymd(addDays(now, -7)), hi = ymd(addDays(now, 60));
+    const acts = state.acts.filter((a) => a.date >= lo && a.date <= hi).sort(sortActs).slice(0, 200)
+      .map((a) => ({ id: a.id, title: a.title, date: a.date, start: a.start || "", end: a.end || "", category: a.category, done: !!a.done, notes: (a.notes || "").slice(0, 120) }));
+    const g = state.gEvents.filter((e) => e.dates.some((d) => d >= lo && d <= hi)).slice(0, 80)
+      .map((e) => ({ title: e.title, date: e.dates[0], start: e.allDay ? "" : e.start, end: e.end }));
+    return [
+      "Eres el asistente de la agenda personal de Jhullians, estudiante de software en Colombia que también hace su práctica en la Alcaldía. Hablas en español colombiano, cálido, breve y concreto (2 a 4 frases).",
+      `Hoy es ${fmtLong.format(now)} (${ymd(now)}), hora local ${pad(now.getHours())}:${pad(now.getMinutes())}, zona ${TZ}.`,
+      "Calendario de referencia (usa estas fechas exactas): " + days.join("; ") + ".",
+      "Categorías válidas: estudio, practica, personal, salud, otro.",
+      "Actividades guardadas (puedes modificarlas por id):\n" + JSON.stringify(acts),
+      g.length ? "Eventos de Google Calendar (solo lectura, tenlos en cuenta para no chocar horarios):\n" + JSON.stringify(g) : "No hay eventos de Google Calendar cargados.",
+      "Cuando te pidan crear, planear u organizar, crea actividades concretas con hora realista y sin cruces. Para cosas repetidas crea una actividad por cada día (máximo 40 en total). Si solo te preguntan algo, responde sin cambiar nada. Borra solo si lo piden claramente.",
+      'Responde SOLO con un objeto JSON, sin texto extra, con esta forma:\n{"reply": "lo que le dices a Jhullians", "create": [{"title": "...", "date": "YYYY-MM-DD", "start": "HH:MM o vacío", "end": "HH:MM o vacío", "category": "estudio", "notes": "opcional"}], "update": [{"id": "...", "title"?: "...", "date"?: "...", "start"?: "...", "end"?: "...", "category"?: "...", "notes"?: "...", "done"?: true}], "delete": ["id"]}\nUsa listas vacías cuando no haya cambios.',
+    ].join("\n\n");
+  }
+
+  function cleanAct(x, partial) {
+    if (!x || typeof x !== "object") return null;
+    const o = {};
+    if (typeof x.title === "string" && x.title.trim()) o.title = x.title.trim().slice(0, 120);
+    if (isDate(x.date)) o.date = x.date;
+    if ("start" in x) o.start = isTime(x.start) ? x.start : "";
+    if ("end" in x) o.end = isTime(x.end) ? x.end : "";
+    if (o.end && !o.start && !partial) o.end = "";
+    if (typeof x.category === "string") o.category = CATS[x.category] ? x.category : "otro";
+    if (typeof x.notes === "string") o.notes = x.notes.slice(0, 1000);
+    if (typeof x.done === "boolean") o.done = x.done;
+    if (!partial && (!o.title || !o.date)) return null;
+    return o;
+  }
+
+  async function applyPlan(plan) {
+    const out = { created: [], updated: [], deleted: [] };
+    if (!db) return out;
+    const byId = new Map(state.acts.map((a) => [a.id, a]));
+    const creates = (Array.isArray(plan.create) ? plan.create : []).map((x) => cleanAct(x, false)).filter(Boolean).slice(0, 40);
+    const updates = (Array.isArray(plan.update) ? plan.update : []).filter((u) => u && byId.has(String(u.id))).slice(0, 60);
+    const deletes = (Array.isArray(plan.delete) ? plan.delete : []).map(String).filter((id) => byId.has(id)).slice(0, 60);
+
+    await Promise.all(creates.map(async (c) => {
+      const body = { title: c.title, date: c.date, start: c.start || "", end: c.end || "", category: c.category || "otro", notes: c.notes || "", done: false, source: "claude", createdAt: Date.now() };
+      await db.collection("activities").add(body);
+      out.created.push(body);
+    }));
+    await Promise.all(updates.map(async (u) => {
+      const ch = cleanAct(u, true); if (!ch || !Object.keys(ch).length) return;
+      await db.doc("activities/" + String(u.id)).update(ch);
+      out.updated.push({ ...byId.get(String(u.id)), ...ch });
+    }));
+    const removed = [];
+    await Promise.all(deletes.map(async (id) => {
+      const a = byId.get(id); const copy = { ...a }; delete copy.id;
+      await db.doc("activities/" + id).delete();
+      removed.push([id, copy]); out.deleted.push(a);
+    }));
+    if (removed.length) toast(`Claude eliminó ${removed.length} actividad${removed.length === 1 ? "" : "es"}`, async () => {
+      await Promise.all(removed.map(([id, copy]) => db.doc("activities/" + id).set(copy)));
+    });
+    return out;
+  }
+
+  function changesEl(out) {
+    const rows = [];
+    const line = (lbl, a) => h("div", null, h("b", null, lbl), h("span", null, `${a.title} · ${cap(fmtShort.format(parseYmd(a.date)))}${a.start ? " " + a.start : ""}`));
+    out.created.sort(sortActs).forEach((a) => rows.push(line("+ creada", a)));
+    out.updated.forEach((a) => rows.push(line(a.done ? "✓ hecha" : "~ cambio", a)));
+    out.deleted.forEach((a) => rows.push(line("− borrada", a)));
+    return rows.length ? h("div", { class: "changes" }, rows) : null;
+  }
+
+  const S_ERR = {
+    not_granted: "No le diste permiso a esta app para usar Claude. Puedes activarlo en los permisos del artifact.",
+    sampling_disabled: "Claude no está disponible para tu cuenta en esta app.",
+    rate_limited: "Claude está recibiendo muchos mensajes. Espera un momento y vuelve a enviar.",
+    session_expired: "Tu sesión expiró. Vuelve a iniciar sesión en claude.ai.",
+    refused: "Claude no pudo ayudar con ese mensaje. Prueba a decirlo de otra forma.",
+    invalid_json: "La respuesta llegó incompleta. Envía el mensaje otra vez.",
+    prompt_too_large: "Hay demasiadas actividades para enviar. Elimina algunas antiguas.",
+  };
+
+  async function send() {
+    const box = $("#ask");
+    const text = box.value.trim();
+    if (!text || busy) return;
+    if (!sample) { addMsg("err", "Claude no está disponible en esta vista. Abre la app desde claude.ai."); return; }
+    box.value = ""; autosize();
+    $("#msgs").querySelector(".sugs")?.remove();
+    addMsg("me", text);
+    const thinking = addMsg("ai", h("span", { class: "thinking", "aria-label": "Pensando" }, h("i"), h("i"), h("i")));
+    const ctl = new AbortController(); busy = ctl; setSendMode(true);
+    const turns = [{ role: "user", content: buildRules() }, ...history.slice(-10), { role: "user", content: text }];
+    try {
+      const plan = await sample.json(turns, { cache: false, signal: ctl.signal });
+      const reply = plan && typeof plan.reply === "string" && plan.reply.trim() ? plan.reply.trim() : "Listo.";
+      let out = { created: [], updated: [], deleted: [] };
+      try { out = await applyPlan(plan || {}); }
+      catch (e) { thinking.remove(); addMsg("err", e && e.code === "quota_exceeded" ? "No pude guardar todo: llegaste al límite de actividades." : "Claude respondió, pero no pude guardar los cambios. Inténtalo otra vez."); history.push({ role: "user", content: text }); return; }
+      thinking.remove();
+      addMsg("ai", reply, changesEl(out));
+      const summary = [out.created.length && `creé ${out.created.length}`, out.updated.length && `cambié ${out.updated.length}`, out.deleted.length && `borré ${out.deleted.length}`].filter(Boolean).join(", ");
+      history.push({ role: "user", content: text }, { role: "assistant", content: reply + (summary ? ` [Cambios aplicados: ${summary}]` : "") });
+    } catch (e) {
+      thinking.remove();
+      const code = e && e.code;
+      if (code === "cancelled") addMsg("err", "Detuviste la respuesta.");
+      else addMsg("err", S_ERR[code] || "Algo falló al hablar con Claude. Envía el mensaje otra vez.");
+      history.push({ role: "user", content: text }, { role: "assistant", content: "(no respondí este mensaje)" });
+    } finally {
+      busy = null; setSendMode(false);
+    }
+  }
+  function setSendMode(on) {
+    const b = $("#sendBtn");
+    b.classList.toggle("stop", on);
+    b.innerHTML = on ? STOP_SVG : SEND_SVG;
+    b.setAttribute("aria-label", on ? "Detener" : "Enviar");
+  }
+  function autosize() { const t = $("#ask"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; }
+  $("#composer").addEventListener("submit", (e) => { e.preventDefault(); if (busy) busy.abort(); else send(); });
+  $("#ask").addEventListener("input", autosize);
+  $("#ask").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!busy) send(); } });
+
+  // ---------- Tabs & render ----------
+  function setTab(t) {
+    state.tab = t;
+    store("tab", t);
+    document.querySelectorAll("nav.tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === t ? "page" : "false"));
+    $("#v-hoy").hidden = t !== "hoy"; $("#v-cal").hidden = t !== "cal"; $("#v-chat").hidden = t !== "chat";
+    $("#fab").hidden = t === "chat";
+    if (t === "chat") { scrollChat(); setTimeout(() => $("#ask").focus({ preventScroll: true }), 50); }
+    render();
+  }
+  document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+  $("#fab").addEventListener("click", () => openSheet(null));
+
+  function renderSync() {
+    const s = $("#sync");
+    s.className = "sync" + (db && state.loaded ? " ok" : state.dbErr ? " err" : "");
+    s.querySelector("span").textContent = db && state.loaded ? "guardado en la nube" : state.dbErr ? "sin conexión" : "conectando…";
+  }
+  function render() {
+    $("#todayBig").textContent = cap(fmtLong.format(new Date()));
+    renderSync();
+    if (state.tab === "hoy") renderHoy();
+    if (state.tab === "cal") renderCal();
+  }
+
+  // ---------- Boot ----------
+  chatIntro();
+  const savedTab = store("tab");
+  setTab(savedTab === "cal" || savedTab === "chat" ? savedTab : "hoy");
+
+  // Midnight rollover: re-render when the day changes
+  let lastDay = todayStr();
+  setInterval(() => { const t = todayStr(); if (t !== lastDay) { lastDay = t; render(); } }, 60000);
+
+  const use = (n) => (window.claude && window.claude.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
+
+  use("db").then((d) => {
+    db = d;
+    if (!db) { state.dbErr = "Abre esta app desde claude.ai para guardar tus actividades."; render(); return; }
+    db.collection("activities").limit(1000).onSnapshot((snap) => {
+      state.acts = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      state.loaded = true; state.dbErr = "";
+      render();
+    }, (e) => {
+      state.dbErr = e && e.code === "revoked" ? "Ya no tienes acceso a esta agenda." : "Se perdió la conexión con tu agenda. Recarga la página.";
+      render();
+    });
+    render();
+  });
+  use("sample").then((s) => { sample = s; });
+  use("permissions").then((p) => { perms = p; });
+  use("mcp").then(async (m) => {
+    mcp = m;
+    if (!mcp) { state.gStatus = "unavailable"; render(); return; }
+    let st = "prompt";
+    try { const p = await use("permissions"); if (p) st = await p.state("mcp:" + GCAL).catch(() => "prompt"); } catch {}
+    if (st === "unavailable") { state.gStatus = "unavailable"; mcp = null; }
+    else if (st === "granted" || store("gcal") === "1") startGcal();
+    else state.gStatus = "prompt";
+    render();
+  });
+})();
+</script>
