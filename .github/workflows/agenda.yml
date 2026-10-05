@@ -1,0 +1,97 @@
+name: Agenda (APK y web)
+
+on:
+  push:
+    paths:
+      - "proyectos/agenda/**"
+      - ".github/workflows/agenda.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agenda-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: proyectos/agenda
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: proyectos/agenda/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar la app web
+        run: npm run build
+
+      - name: Crear el proyecto Android
+        run: npx cap add android
+
+      - name: Generar íconos y pantalla de inicio
+        run: npx capacitor-assets generate --android
+
+      - name: Copiar la app web al proyecto Android
+        run: npx cap sync android
+
+      - name: Poner número de versión
+        run: |
+          sed -i 's/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName "1.0"/versionName "1.0.${{ github.run_number }}"/' android/app/build.gradle
+          grep -n "versionCode\|versionName" android/app/build.gradle
+
+      # Siempre la misma firma, para que cada APK nuevo se instale encima del anterior sin borrar los datos.
+      - name: Usar la firma fija de la app
+        run: |
+          mkdir -p ~/.android
+          cp signing/debug.keystore ~/.android/debug.keystore
+
+      - name: Compilar el APK
+        working-directory: proyectos/agenda/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Renombrar el APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk Agenda-Jhullians.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Agenda-Jhullians-apk
+          path: proyectos/agenda/Agenda-Jhullians.apk
+
+      - name: Publicar el APK para descargar
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: agenda-v1.0.${{ github.run_number }}
+          name: Agenda 1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: proyectos/agenda/Agenda-Jhullians.apk
+          body: |
+            Descarga **Agenda-Jhullians.apk** desde tu celular Android y ábrelo para instalarlo.
+            Si Android lo pide, permite "Instalar apps desconocidas" para tu navegador.
+            Las versiones nuevas se instalan encima y conservan tus actividades y chats.
+
+      - name: Publicar la versión web (rama gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./proyectos/agenda/www
+          publish_branch: gh-pages
+          force_orphan: true

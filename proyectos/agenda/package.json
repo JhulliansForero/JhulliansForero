@@ -1,0 +1,21 @@
+{
+  "name": "agenda-jhullians",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agenda personal con Claude: actividades, calendario y chat.",
+  "scripts": {
+    "build": "esbuild src/app.js --bundle --format=esm --target=es2020 --minify --outfile=www/app.js",
+    "dev": "esbuild src/app.js --bundle --format=esm --target=es2020 --outfile=www/app.js --servedir=www"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.2",
+    "esbuild": "0.28.2"
+  }
+}
