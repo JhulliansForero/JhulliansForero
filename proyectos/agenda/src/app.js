@@ -10,8 +10,9 @@ import * as notas from "./notas.js";
 import * as habitos from "./habitos.js";
 import * as notify from "./notify.js";
 import * as backup from "./backup.js";
+import * as importar from "./importar.js";
 
-const APP_VERSION = "2.0";
+const APP_VERSION = "2.1";
 
 // ---------- Constantes ----------
 const CATS = { estudio: "Estudio", practica: "Práctica", personal: "Personal", salud: "Salud", otro: "Otro" };
@@ -456,6 +457,118 @@ function openActSheet(o) {
   if (!editing) setTimeout(() => title.focus(), 60);
 }
 
+// ---------- Hoja: pegar datos que entrega otro chat ----------
+function openPasteSheet() {
+  const box = h("textarea", { id: "p-text", rows: "9", placeholder: "Pega aquí el bloque de datos que te dio Claude (empieza con { y termina con })", spellcheck: "false", class: "mono" });
+  const preview = h("div", { class: "paste-preview", hidden: true });
+  let parsed = null;
+
+  const existing = () => ({
+    acts: new Set(state.acts.map(importar.keyAct)),
+    movs: new Set(finanzas.fin.movs.map(importar.keyMov)),
+    fixed: new Set(finanzas.fin.fixed.map(importar.keyFixed)),
+    notes: new Set(notas.notes.map(importar.keyNote)),
+    habits: new Set(habitos.habits.map(importar.keyHabit)),
+  });
+  // Quita repetidos (contra lo que ya hay y dentro del mismo bloque).
+  const fresh = (list, keyFn, seen) => {
+    const out = [];
+    for (const x of list) {
+      const k = keyFn(x);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(x);
+    }
+    return out;
+  };
+
+  const review = () => {
+    preview.hidden = false;
+    try {
+      const p = importar.parse(box.value, todayStr());
+      const ex = existing();
+      parsed = {
+        acts: fresh(p.acts, importar.keyAct, ex.acts),
+        movs: fresh(p.movs, importar.keyMov, ex.movs),
+        fixed: fresh(p.fixed, importar.keyFixed, ex.fixed),
+        notes: fresh(p.notes, importar.keyNote, ex.notes),
+        habits: fresh(p.habits, importar.keyHabit, ex.habits),
+      };
+      const dup =
+        p.acts.length + p.movs.length + p.fixed.length + p.notes.length + p.habits.length -
+        (parsed.acts.length + parsed.movs.length + parsed.fixed.length + parsed.notes.length + parsed.habits.length);
+      const gastos = parsed.movs.filter((m) => m.type === "gasto");
+      const ingresos = parsed.movs.filter((m) => m.type === "ingreso");
+      const pl = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+      const rows = [
+        [parsed.acts.length, pl(parsed.acts.length, "actividad", "actividades")],
+        [gastos.length, `${pl(gastos.length, "gasto", "gastos")} (${fmtMoney(gastos.reduce((s, m) => s + m.amount, 0))})`],
+        [ingresos.length, `${pl(ingresos.length, "ingreso", "ingresos")} (${fmtMoney(ingresos.reduce((s, m) => s + m.amount, 0))})`],
+        [parsed.fixed.length, `${pl(parsed.fixed.length, "movimiento fijo", "movimientos fijos")} (empiezan el próximo mes)`],
+        [parsed.notes.length, pl(parsed.notes.length, "nota", "notas")],
+        [parsed.habits.length, pl(parsed.habits.length, "hábito", "hábitos")],
+      ].filter(([n]) => n > 0);
+      const total = rows.reduce((s, [n]) => s + n, 0);
+      preview.replaceChildren(
+        ...[
+          h("b", null, total ? "Se va a agregar:" : "No hay nada nuevo para agregar."),
+          rows.length ? h("ul", null, rows.map(([, l]) => h("li", null, l))) : null,
+          dup > 0 ? h("p", { class: "small" }, `${dup} ${dup === 1 ? "elemento ya estaba" : "elementos ya estaban"} en tu agenda y se omiten.`) : null,
+          p.errors.length ? h("div", { class: "small err-txt" }, h("p", null, "No se pudieron leer:"), h("ul", null, p.errors.slice(0, 8).map((e) => h("li", null, e)))) : null,
+        ].filter(Boolean),
+      );
+      addBtn.disabled = total === 0;
+    } catch (e) {
+      parsed = null;
+      addBtn.disabled = true;
+      preview.replaceChildren(h("span", { class: "err-txt" }, e.message));
+    }
+  };
+
+  const apply = async () => {
+    if (!parsed) return;
+    const p = parsed;
+    const current = monthKey(new Date());
+    for (const a of p.acts) state.acts.push(newAct(a));
+    for (const f of p.fixed) finanzas.fin.fixed.push({ id: uid(), ...f, active: true, startMonth: current, posted: [current] });
+    for (const n of p.notes) notas.notes.push({ id: uid(), ...n, createdAt: Date.now(), updatedAt: Date.now() });
+    for (const x of p.habits) habitos.habits.push({ id: uid(), ...x, doneDates: [], createdAt: Date.now() });
+    if (p.movs.length) await finanzas.addMovs(p.movs, "importado");
+    else if (p.fixed.length) await finanzas.saveFin();
+    if (p.notes.length) await notas.saveNotes();
+    if (p.habits.length) await habitos.saveHabits();
+    await saveActs();
+    sheet.close();
+    render();
+    const n = p.acts.length + p.movs.length + p.fixed.length + p.notes.length + p.habits.length;
+    toast(`Listo: agregué ${n} ${n === 1 ? "elemento" : "elementos"} a tu agenda.`);
+  };
+
+  const addBtn = h("button", { class: "btn primary", type: "button", disabled: true, onclick: apply }, "Agregar a mi agenda");
+  box.addEventListener("input", () => {
+    parsed = null;
+    addBtn.disabled = true;
+    preview.hidden = true;
+  });
+  const content = h(
+    "div",
+    { style: "display:grid;gap:12px" },
+    h("h3", null, "Pegar datos"),
+    h("p", { class: "small" }, "Copia el bloque de datos que te dio Claude en otro chat y pégalo aquí. Se agrega a lo que ya tienes; no se borra nada y lo repetido se omite."),
+    box,
+    preview,
+    h(
+      "div",
+      { class: "sheet-actions end" },
+      h("button", { class: "btn", type: "button", onclick: () => sheet.close() }, "Cancelar"),
+      h("button", { class: "btn", type: "button", onclick: review }, "Revisar"),
+      addBtn,
+    ),
+  );
+  const sheet = openSheet(content, "Pegar datos");
+  setTimeout(() => box.focus(), 60);
+}
+
 // ---------- Hoja: ajustes ----------
 async function openSettings() {
   const n = state.notif;
@@ -550,6 +663,24 @@ async function openSettings() {
     "form",
     { style: "display:grid;gap:16px" },
     h("h3", null, "Ajustes"),
+    h(
+      "section",
+      { class: "set-group" },
+      h("h4", null, "Pegar datos de otro chat"),
+      h("span", { class: "small" }, "Agrega de una vez actividades, gastos, notas o hábitos que te haya organizado Claude."),
+      h(
+        "button",
+        {
+          class: "btn primary",
+          type: "button",
+          onclick: () => {
+            sheet.close();
+            openPasteSheet();
+          },
+        },
+        "Pegar datos",
+      ),
+    ),
     h(
       "section",
       { class: "set-group" },
@@ -808,6 +939,8 @@ function handleLink(url) {
     finanzas.showMonth(monthKey(new Date()));
     setTab("fin");
     if (action === "gasto" || action === "ingreso") finanzas.openMovSheet(null, action);
+  } else if (section === "pegar") {
+    openPasteSheet();
   } else if (section === "notas") {
     setTab("notas");
     if (action === "nueva") notas.openNoteSheet(null);
