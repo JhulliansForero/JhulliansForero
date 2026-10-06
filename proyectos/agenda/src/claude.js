@@ -448,8 +448,10 @@ export async function runTurn({ apiKey, model, history, userContent, agenda, onT
   throw new TurnError("loop", "Claude tardó demasiados pasos en responder. Inténtalo con una petición más concreta.");
 }
 
-// Prueba la clave sin gastar saldo (consultar un modelo no cuesta).
+// Prueba la clave, el acceso al modelo y que la cuenta tenga saldo.
+// El mensaje de prueba es mínimo (1 token con Haiku): cuesta una fracción ínfima de centavo.
 export async function checkKey(apiKey, model) {
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 1 });
   await client.models.retrieve(model);
+  await client.messages.create({ model: "claude-haiku-4-5", max_tokens: 1, messages: [{ role: "user", content: "ok" }] });
 }
