@@ -41,12 +41,7 @@ jobs:
       - name: Compilar la app web
         run: npm run build
 
-      - name: Crear el proyecto Android
-        run: npx cap add android
-
-      - name: Generar íconos y pantalla de inicio
-        run: npx capacitor-assets generate --android
-
+      # El proyecto Android (con los widgets) está en el repositorio; aquí solo se le copia la app web.
       - name: Copiar la app web al proyecto Android
         run: npx cap sync android
 

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_agenda_desc">Tus actividades de hoy</string>
+    <string name="widget_finanzas_desc">Tu saldo y gastos del mes</string>
+</resources>

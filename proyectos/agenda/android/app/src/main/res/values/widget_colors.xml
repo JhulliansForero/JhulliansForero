@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="w_bg">#FFFFFFFF</color>
+    <color name="w_surface">#FFEEF2F0</color>
+    <color name="w_ink">#FF14211C</color>
+    <color name="w_muted">#FF5A6B64</color>
+    <color name="w_accent">#FF0D7A52</color>
+    <color name="w_accent_ink">#FFFFFFFF</color>
+    <color name="w_danger">#FFB4382C</color>
+    <color name="w_cat_estudio">#FF2F63C9</color>
+    <color name="w_cat_practica">#FFB97A06</color>
+    <color name="w_cat_personal">#FF8752C8</color>
+    <color name="w_cat_salud">#FFCC4B3C</color>
+    <color name="w_cat_otro">#FF66746E</color>
+</resources>

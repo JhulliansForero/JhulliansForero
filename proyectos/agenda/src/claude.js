@@ -23,15 +23,23 @@ export const MODELS = [
 export const DEFAULT_MODEL = MODELS[0].id;
 
 export const CATEGORIES = ["estudio", "practica", "personal", "salud", "otro"];
+const GASTO_CATS = ["comida", "transporte", "vivienda", "servicios", "estudio", "salud", "ocio", "ropa", "deudas", "otros"];
+const INGRESO_CATS = ["salario", "practica", "freelance", "ventas", "regalo", "otros"];
 
-const SYSTEM = `Eres Claude, el asistente dentro de la app de agenda personal de Jhullians Forero, estudiante de software en Colombia que además hace su práctica en la Alcaldía. Tu trabajo es ayudarle a organizar su tiempo usando las herramientas de la agenda.
+const SYSTEM = `Eres Claude, el asistente dentro de la app de agenda y finanzas personales de Jhullians Forero, estudiante de software en Colombia que además hace su práctica en la Alcaldía. Tu trabajo es ayudarle a organizar su tiempo y su plata usando las herramientas de la app.
 
 Cómo trabajar:
 - Cada mensaje de Jhullians empieza con un bloque [Contexto] que trae la fecha y hora actuales y un calendario de referencia de los próximos días. Úsalo para convertir "mañana", "el jueves" o "la otra semana" en fechas exactas (YYYY-MM-DD).
 - Antes de planear algo o de responder qué tiene pendiente, consulta la agenda con listar_actividades. No inventes actividades que no aparezcan ahí.
 - Cuando te pida crear, planear u organizar, crea actividades concretas con horas realistas y sin cruces con lo que ya tiene. Si algo se repite, crea una actividad por cada día (máximo 40 por llamada).
 - Para cambiar, mover o marcar como hecha una actividad, usa actualizar_actividades con su id. Borra solo cuando lo pida claramente.
-- Categorías: estudio, practica (su práctica en la Alcaldía), personal, salud, otro.
+- Categorías de actividades: estudio, practica (su práctica en la Alcaldía), personal, salud, otro.
+
+Finanzas (en pesos colombianos, COP):
+- La app lleva sus ingresos y gastos. El saldo disponible es lo que tenía al empezar + ingresos − gastos, y puede quedar negativo.
+- Cuando diga que gastó o recibió plata, regístralo con registrar_movimientos. Interpreta "18 mil" como 18000, "una luca" como 1000 y "un palo" como 1000000. Si no dice la fecha, es hoy.
+- Categorías de gastos: comida, transporte, vivienda, servicios, estudio, salud, ocio, ropa, deudas, otros. Categorías de ingresos: salario, practica, freelance, ventas, regalo, otros.
+- Para preguntas sobre su plata usa resumen_finanzas o listar_movimientos; nunca inventes cifras. Si ves que gasta de más o queda en negativo, díselo con tacto y dale un consejo concreto.
 
 Cómo responder:
 - En español colombiano, cálido y breve: de 2 a 4 frases.
@@ -111,6 +119,59 @@ const TOOLS = [
   {
     name: "eliminar_actividades",
     description: "Elimina actividades por id. Úsala solo cuando Jhullians lo pida claramente.",
+    input_schema: {
+      type: "object",
+      properties: { ids: { type: "array", items: { type: "string" } } },
+      required: ["ids"],
+    },
+  },
+  {
+    name: "registrar_movimientos",
+    description:
+      "Registra gastos o ingresos de dinero en pesos colombianos. Los gastos se restan del saldo y los ingresos se suman. Devuelve lo registrado y el saldo nuevo.",
+    input_schema: {
+      type: "object",
+      properties: {
+        movimientos: {
+          type: "array",
+          maxItems: 30,
+          items: {
+            type: "object",
+            properties: {
+              tipo: { type: "string", enum: ["gasto", "ingreso"] },
+              monto: { type: "number", description: "Valor en pesos, sin puntos ni signo. Ej: 18000" },
+              categoria: { type: "string", enum: [...new Set([...GASTO_CATS, ...INGRESO_CATS])] },
+              descripcion: { type: "string", description: "En qué fue, corto. Ej: almuerzo" },
+              fecha: DATE,
+            },
+            required: ["tipo", "monto", "categoria"],
+          },
+        },
+      },
+      required: ["movimientos"],
+    },
+  },
+  {
+    name: "listar_movimientos",
+    description: "Lista los ingresos y gastos entre dos fechas (ambas incluidas), del más reciente al más antiguo, con su id.",
+    input_schema: {
+      type: "object",
+      properties: { desde: DATE, hasta: DATE },
+      required: ["desde", "hasta"],
+    },
+  },
+  {
+    name: "resumen_finanzas",
+    description:
+      "Devuelve el saldo disponible, los ingresos, gastos y balance de un mes, los gastos por categoría, el presupuesto mensual y los movimientos fijos.",
+    input_schema: {
+      type: "object",
+      properties: { mes: { type: "string", description: "Mes en formato YYYY-MM. Si no se envía, el mes actual." } },
+    },
+  },
+  {
+    name: "eliminar_movimientos",
+    description: "Elimina ingresos o gastos por id. Úsala solo cuando Jhullians lo pida claramente o para corregir un registro equivocado que tú hiciste.",
     input_schema: {
       type: "object",
       properties: { ids: { type: "array", items: { type: "string" } } },
@@ -211,6 +272,50 @@ async function runTool(block, agenda, report) {
       const { removed, missing } = await agenda.remove(input.ids.map(String).slice(0, 60));
       removed.forEach((a) => report.change("deleted", a));
       return { eliminadas: removed.map((a) => a.id), no_encontradas: missing };
+    }
+    case "registrar_movimientos": {
+      if (!Array.isArray(input.movimientos)) throw new Error("movimientos debe ser una lista");
+      const valid = [];
+      const rechazados = [];
+      input.movimientos.slice(0, 30).forEach((x, i) => {
+        const type = x?.tipo === "ingreso" ? "ingreso" : x?.tipo === "gasto" ? "gasto" : null;
+        const amount = Number(x?.monto);
+        if (!type) return rechazados.push({ indice: i, motivo: "tipo debe ser gasto o ingreso" });
+        if (!Number.isFinite(amount) || amount <= 0) return rechazados.push({ indice: i, motivo: "monto inválido" });
+        if (x.fecha !== undefined && !isDate(x.fecha)) return rechazados.push({ indice: i, motivo: "fecha inválida" });
+        const cats = type === "ingreso" ? INGRESO_CATS : GASTO_CATS;
+        valid.push({ type, amount: Math.round(amount), cat: cats.includes(x.categoria) ? x.categoria : "otros", desc: typeof x.descripcion === "string" ? x.descripcion.trim() : "", date: x.fecha });
+      });
+      report.status("Anotando en tus finanzas…");
+      const created = valid.length ? await agenda.addMovs(valid) : [];
+      created.forEach((m) => report.change(m.type, { title: m.desc || m.cat, date: m.date, amount: m.amount }));
+      return {
+        registrados: created.map((m) => ({ id: m.id, tipo: m.type, monto: m.amount, categoria: m.cat, fecha: m.date })),
+        rechazados,
+        saldo_disponible: agenda.summary().saldo_disponible,
+      };
+    }
+    case "listar_movimientos": {
+      if (!isDate(input.desde) || !isDate(input.hasta)) throw new Error("desde y hasta deben ser fechas YYYY-MM-DD");
+      report.status("Revisando tus finanzas…");
+      const list = agenda.listMovs(input.desde, input.hasta);
+      return {
+        total: list.length,
+        movimientos: list.slice(0, 200).map((m) => ({ id: m.id, tipo: m.type, monto: m.amount, categoria: m.cat, descripcion: m.desc, fecha: m.date })),
+        recortada: list.length > 200,
+      };
+    }
+    case "resumen_finanzas": {
+      if (input.mes !== undefined && !/^\d{4}-\d{2}$/.test(String(input.mes))) throw new Error("mes debe tener formato YYYY-MM");
+      report.status("Revisando tus finanzas…");
+      return agenda.summary(input.mes);
+    }
+    case "eliminar_movimientos": {
+      if (!Array.isArray(input.ids)) throw new Error("ids debe ser una lista");
+      report.status("Eliminando…");
+      const { removed, missing } = await agenda.removeMovs(input.ids.map(String).slice(0, 60));
+      removed.forEach((m) => report.change("mov_deleted", { title: m.desc || m.cat, date: m.date, amount: m.amount }));
+      return { eliminados: removed.map((m) => m.id), no_encontrados: missing, saldo_disponible: agenda.summary().saldo_disponible };
     }
     default:
       throw new Error(`herramienta desconocida: ${block.name}`);

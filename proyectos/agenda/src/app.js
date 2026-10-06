@@ -1,7 +1,12 @@
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import * as store from "./store.js";
 import { MODELS, DEFAULT_MODEL, runTurn, describeError, checkKey } from "./claude.js";
+import {
+  $, h, pad, ymd, parseYmd, addDays, cap, todayStr, isDate, uid, monthKey,
+  fmtLong, fmtLongYear, fmtShort, fmtMonth, fmtStamp, fmtMoney, ARROW, sheets, openSheet, toast, initToast,
+} from "./ui.js";
+import * as finanzas from "./finanzas.js";
 
 // ---------- Constantes y utilidades ----------
 const CATS = { estudio: "Estudio", practica: "Práctica", personal: "Personal", salud: "Salud", otro: "Otro" };
@@ -17,48 +22,27 @@ const SEND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const STOP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
 const TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
 
-const $ = (s) => document.querySelector(s);
-function h(tag, attrs, ...kids) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs || {})) {
-    if (v == null || v === false) continue;
-    if (k === "class") el.className = v;
-    else if (k === "style") el.setAttribute("style", v);
-    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
-    else if (k === "html") el.innerHTML = v;
-    else el.setAttribute(k, v === true ? "" : v);
-  }
-  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : String(kid));
-  return el;
-}
-const pad = (n) => String(n).padStart(2, "0");
-const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const parseYmd = (s) => {
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(y, m - 1, d);
-};
-const addDays = (d, n) => {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-};
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-const fmtLong = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long" });
-const fmtLongYear = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-const fmtShort = new Intl.DateTimeFormat("es-CO", { weekday: "short", day: "numeric", month: "short" });
-const fmtMonth = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric" });
-const fmtStamp = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
-const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
 const catVar = (c) => `--cat: var(--c-${CATS[c] ? c : "otro"})`;
-const todayStr = () => ymd(new Date());
-const uid = () => {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-  }
-};
+
 const native = Capacitor.isNativePlatform();
+const WidgetBridge = registerPlugin("WidgetBridge");
+
+// Envía a los widgets de la pantalla de inicio lo que deben mostrar.
+let widgetTimer = null;
+function updateWidgets() {
+  if (!native) return;
+  clearTimeout(widgetTimer);
+  widgetTimer = setTimeout(() => {
+    const from = todayStr();
+    const to = ymd(addDays(new Date(), 14));
+    const items = state.acts
+      .filter((a) => a.date >= from && a.date <= to)
+      .sort(sortActs)
+      .slice(0, 60)
+      .map((a) => ({ t: a.title, d: a.date, s: a.start || "", e: a.end || "", c: a.category, x: !!a.done }));
+    WidgetBridge.update({ agenda: JSON.stringify({ items }), finanzas: JSON.stringify(finanzas.widgetPayload()) }).catch(() => {});
+  }, 300);
+}
 
 // ---------- Estado ----------
 const state = {
@@ -79,6 +63,7 @@ let saving = Promise.resolve();
 function saveActs() {
   const snapshot = state.acts.map((a) => ({ ...a }));
   saving = saving.then(() => store.set("acts", snapshot)).catch(() => toast("No se pudo guardar en el celular."));
+  updateWidgets();
   return saving;
 }
 function sortActs(a, b) {
@@ -152,6 +137,16 @@ const agenda = {
       });
     }
     return { removed, missing };
+  },
+  // Finanzas
+  listMovs: (desde, hasta) => finanzas.listMovs(desde, hasta),
+  summary: (mes) => finanzas.summaryFor(mes || monthKey(new Date())),
+  async addMovs(items) {
+    return finanzas.addMovs(items, "claude");
+  },
+  async removeMovs(ids) {
+    const removed = await finanzas.removeMovs(ids, `Claude eliminó ${ids.length} movimiento${ids.length === 1 ? "" : "s"}`);
+    return { removed, missing: ids.filter((id) => !removed.some((m) => m.id === id)) };
   },
 };
 
@@ -344,28 +339,6 @@ function shiftMonth(n) {
   render();
 }
 
-// ---------- Hojas (paneles que suben desde abajo) ----------
-const sheets = [];
-function openSheet(content, label) {
-  const sheet = h("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-label": label }, h("div", { class: "grab" }), content);
-  const scrim = h("div", { class: "scrim" }, sheet);
-  const entry = { close: () => {} };
-  scrim.addEventListener("click", (e) => {
-    if (e.target === scrim) entry.close();
-  });
-  entry.close = () => {
-    scrim.remove();
-    const i = sheets.indexOf(entry);
-    if (i >= 0) sheets.splice(i, 1);
-  };
-  sheets.push(entry);
-  document.body.append(scrim);
-  return entry;
-}
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && sheets.length) sheets[sheets.length - 1].close();
-});
-
 // ---------- Hoja: agregar / editar actividad ----------
 function openActSheet(a) {
   const editing = !!(a && a.id);
@@ -493,6 +466,34 @@ function openActSheet(a) {
 }
 
 // ---------- Hoja: ajustes ----------
+function widgetsSection() {
+  const note = h("div", { class: "small", hidden: true });
+  const pin = async (kind) => {
+    try {
+      const r = await WidgetBridge.pin({ kind });
+      if (!r || !r.supported) throw new Error("no");
+      note.hidden = false;
+      note.textContent = "Confirma en el aviso de tu celular para ponerlo en la pantalla de inicio.";
+    } catch {
+      note.hidden = false;
+      note.textContent = "Tu celular no permite agregarlo desde aquí. Mantén presionada la pantalla de inicio → Widgets → Agenda.";
+    }
+  };
+  return h(
+    "div",
+    { class: "field" },
+    h("span", { class: "lbl" }, "Widgets en la pantalla de inicio"),
+    h(
+      "div",
+      { class: "fin-actions" },
+      h("button", { class: "btn", type: "button", onclick: () => pin("agenda") }, "Agregar widget de Hoy"),
+      h("button", { class: "btn", type: "button", onclick: () => pin("finanzas") }, "Agregar widget de Finanzas"),
+    ),
+    note,
+    h("span", { class: "small" }, "También puedes mantener presionada la pantalla de inicio → Widgets → Agenda."),
+  );
+}
+
 function openSettings() {
   const key = h("input", {
     id: "s-key",
@@ -587,7 +588,12 @@ function openSettings() {
         h("button", { class: "btn primary", type: "submit" }, "Guardar"),
       ),
     ),
-    h("div", { class: "small" }, "Tus actividades y chats se guardan solo en este dispositivo."),
+    h(
+      "div",
+      { class: "small" },
+      "Todo se guarda en este celular y funciona sin internet. Solo el chat con Claude necesita conexión y la clave; si se acaba el saldo de la clave, lo demás sigue igual.",
+    ),
+    native ? widgetsSection() : null,
   );
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -599,38 +605,13 @@ function openSettings() {
   const sheet = openSheet(form, "Ajustes");
 }
 
-// ---------- Toast ----------
-let toastTimer = null;
-let toastUndo = null;
-function toast(text, undo) {
-  $("#toastTxt").textContent = text;
-  toastUndo = undo || null;
-  $("#toastBtn").hidden = !undo;
-  $("#toast").hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(
-    () => {
-      $("#toast").hidden = true;
-      toastUndo = null;
-    },
-    undo ? 7000 : 3000,
-  );
-}
-$("#toastBtn").addEventListener("click", async () => {
-  const u = toastUndo;
-  $("#toast").hidden = true;
-  toastUndo = null;
-  if (u) {
-    await u();
-    toast("Listo, lo recuperé.");
-  }
-});
-
 // ---------- Chat con Claude y chats anteriores ----------
 const SUGS = [
   "Tengo parcial de Java el jueves, ármame horas de estudio antes",
   "Agrega gimnasio lunes, miércoles y viernes a las 6 am",
   "¿Qué tengo mañana?",
+  "Gasté 18 mil en almuerzo y 5.800 en bus",
+  "¿Cuánto llevo gastado este mes y en qué?",
   "Organiza mi semana: práctica en la Alcaldía de 8 a 12 entre semana",
 ];
 let busy = null; // AbortController del turno en curso
@@ -667,7 +648,7 @@ async function newChat() {
 
 function changesEl(changes) {
   if (!changes || !changes.length) return null;
-  const lbl = { created: "+ creada", updated: "~ cambio", done: "✓ hecha", deleted: "− borrada" };
+  const lbl = { created: "+ creada", updated: "~ cambio", done: "✓ hecha", deleted: "− borrada", gasto: "− gasto", ingreso: "+ ingreso", mov_deleted: "− borrado" };
   return h(
     "div",
     { class: "changes" },
@@ -676,7 +657,13 @@ function changesEl(changes) {
         "div",
         null,
         h("b", null, lbl[c.type] || c.type),
-        h("span", null, `${c.title} · ${isDate(c.date) ? cap(fmtShort.format(parseYmd(c.date))) : ""}${c.start ? " " + c.start : ""}`),
+        h(
+          "span",
+          null,
+          c.amount != null
+            ? `${c.title} · ${fmtMoney(c.amount)}`
+            : `${c.title} · ${isDate(c.date) ? cap(fmtShort.format(parseYmd(c.date))) : ""}${c.start ? " " + c.start : ""}`,
+        ),
       ),
     ),
   );
@@ -697,7 +684,7 @@ function renderChat() {
         "div",
         { class: "msg ai" },
         h("span", { class: "who" }, "Claude"),
-        "Hola Jhullians. Cuéntame qué tienes que hacer y yo lo organizo en tu agenda: creo las actividades, les pongo hora y las acomodo en el calendario. También puedo mover, completar o borrar las que ya tienes.",
+        "Hola Jhullians. Cuéntame qué tienes que hacer y yo lo organizo en tu agenda, o dime en qué gastaste y lo anoto en tus finanzas. También puedo mover, completar o borrar lo que ya tienes.",
       ),
       h(
         "div",
@@ -721,9 +708,19 @@ function renderChat() {
   } else {
     kids.push(...c.view.map(bubble));
   }
+  if (!navigator.onLine) kids.push(offlineNotice());
   box.replaceChildren(...kids);
   scrollChat();
 }
+function offlineNotice() {
+  return h(
+    "div",
+    { class: "notice" },
+    h("span", null, "Estás sin internet. El chat vuelve cuando haya conexión; la agenda y las finanzas siguen funcionando normal."),
+  );
+}
+window.addEventListener("online", () => renderChat());
+window.addEventListener("offline", () => renderChat());
 function keyNotice() {
   return h(
     "div",
@@ -888,7 +885,7 @@ async function send() {
         status.hidden = !s;
       },
       onChange: (type, a) => {
-        aiItem.changes.push({ type, title: a.title, date: a.date, start: a.start || "" });
+        aiItem.changes.push({ type, title: a.title, date: a.date, start: a.start || "", ...(a.amount != null ? { amount: a.amount } : {}) });
         changesBox.replaceChildren(changesEl(aiItem.changes) || "");
         scrollChat();
       },
@@ -952,7 +949,8 @@ function setTab(t) {
   $("#v-hoy").hidden = t !== "hoy";
   $("#v-cal").hidden = t !== "cal";
   $("#v-chat").hidden = t !== "chat";
-  $("#fab").hidden = t === "chat";
+  $("#v-fin").hidden = t !== "fin";
+  $("#fab").hidden = t === "chat" || t === "fin";
   if (t === "chat") scrollChat();
   render();
 }
@@ -964,6 +962,24 @@ function render() {
   $("#todayBig").textContent = cap(fmtLong.format(new Date()));
   if (state.tab === "hoy") renderHoy();
   if (state.tab === "cal") renderCal();
+  if (state.tab === "fin") finanzas.renderFin();
+}
+
+// Enlaces agenda://seccion/accion que abren los widgets.
+function handleLink(url) {
+  if (!url || !url.startsWith("agenda://")) return;
+  const [section, action] = url.slice("agenda://".length).split(/[/?#]/);
+  while (sheets.length) sheets[sheets.length - 1].close();
+  if (section === "finanzas") {
+    finanzas.showMonth(monthKey(new Date()));
+    setTab("fin");
+    if (action === "gasto" || action === "ingreso") finanzas.openMovSheet(null, action);
+  } else if (section === "chat") {
+    setTab("chat");
+  } else {
+    setTab("hoy");
+    if (action === "nueva") openActSheet(null);
+  }
 }
 
 // Botón "atrás" de Android: cierra paneles, vuelve a Hoy y luego sale.
@@ -973,13 +989,25 @@ if (native) {
     else if (state.tab !== "hoy") setTab("hoy");
     else App.exitApp();
   });
-  App.addListener("resume", () => render());
+  App.addListener("resume", () => {
+    if (finanzas.postFixed()) finanzas.saveFin();
+    render();
+    updateWidgets();
+  });
+  App.addListener("appUrlOpen", (e) => handleLink(e.url));
 }
 
 // ---------- Arranque ----------
 async function boot() {
   setSendMode(false);
+  initToast();
   store.persist();
+  await finanzas.loadFin({
+    changed: () => {
+      if (state.tab === "fin") finanzas.renderFin();
+      updateWidgets();
+    },
+  });
   const [acts, settings, chats, currentId, tab] = await Promise.all([
     store.get("acts", []),
     store.get("settings", null),
@@ -1010,14 +1038,21 @@ async function boot() {
   }
 
   renderChat();
-  setTab(["hoy", "cal", "chat"].includes(tab) ? tab : "hoy");
+  setTab(["hoy", "cal", "fin", "chat"].includes(tab) ? tab : "hoy");
+  updateWidgets();
+  if (native) {
+    const launch = await App.getLaunchUrl().catch(() => null);
+    if (launch && launch.url) handleLink(launch.url);
+  }
 
   let lastDay = todayStr();
   setInterval(() => {
     const t = todayStr();
     if (t !== lastDay) {
       lastDay = t;
+      if (finanzas.postFixed()) finanzas.saveFin();
       render();
+      updateWidgets();
     }
   }, 60000);
 
