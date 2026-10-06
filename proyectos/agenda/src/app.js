@@ -12,7 +12,7 @@ import * as notify from "./notify.js";
 import * as backup from "./backup.js";
 import * as importar from "./importar.js";
 
-const APP_VERSION = "2.1";
+const APP_VERSION = "2.2";
 
 // ---------- Constantes ----------
 const CATS = { estudio: "Estudio", practica: "Práctica", personal: "Personal", salud: "Salud", otro: "Otro" };
@@ -499,6 +499,7 @@ function openPasteSheet() {
         (parsed.acts.length + parsed.movs.length + parsed.fixed.length + parsed.notes.length + parsed.habits.length);
       const gastos = parsed.movs.filter((m) => m.type === "gasto");
       const ingresos = parsed.movs.filter((m) => m.type === "ingreso");
+      const futuros = parsed.movs.filter((m) => m.date > todayStr());
       const pl = (n, one, many) => `${n} ${n === 1 ? one : many}`;
       const rows = [
         [parsed.acts.length, pl(parsed.acts.length, "actividad", "actividades")],
@@ -513,6 +514,9 @@ function openPasteSheet() {
         ...[
           h("b", null, total ? "Se va a agregar:" : "No hay nada nuevo para agregar."),
           rows.length ? h("ul", null, rows.map(([, l]) => h("li", null, l))) : null,
+          futuros.length
+            ? h("p", { class: "small" }, `${pl(futuros.length, "movimiento tiene", "movimientos tienen")} fecha futura: quedan programados y se descuentan del saldo el día que toca.`)
+            : null,
           dup > 0 ? h("p", { class: "small" }, `${dup} ${dup === 1 ? "elemento ya estaba" : "elementos ya estaban"} en tu agenda y se omiten.`) : null,
           p.errors.length ? h("div", { class: "small err-txt" }, h("p", null, "No se pudieron leer:"), h("ul", null, p.errors.slice(0, 8).map((e) => h("li", null, e)))) : null,
         ].filter(Boolean),
@@ -858,6 +862,19 @@ function buildNotifications() {
         id: notify.notifId(`fixed:${f.id}:${date}`),
         title: f.type === "ingreso" ? `Hoy entra: ${f.desc}` : `Hoy toca pagar: ${f.desc}`,
         body: `${f.type === "ingreso" ? "+" : "−"}${fmtMoney(f.amount)}. Se registra solo en tus finanzas.`,
+        at: when,
+        link: "agenda://finanzas",
+      });
+    }
+
+    for (const m of finanzas.fin.movs) {
+      if (m.date !== date || date <= todayStr()) continue;
+      const when = at(date, "09:00");
+      if (when <= now) continue;
+      list.push({
+        id: notify.notifId(`sched:${m.id}`),
+        title: m.type === "ingreso" ? `Hoy entra: ${m.desc || "ingreso programado"}` : `Hoy toca pagar: ${m.desc || "pago programado"}`,
+        body: `${m.type === "ingreso" ? "+" : "−"}${fmtMoney(m.amount)}. Ya quedó descontado de tu saldo; si no lo pagaste hoy, cámbiale la fecha.`,
         at: when,
         link: "agenda://finanzas",
       });

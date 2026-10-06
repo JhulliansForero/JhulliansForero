@@ -57,11 +57,16 @@ export async function loadFin(context) {
 
 // ---------- Cálculos ----------
 const sign = (m) => (m.type === "ingreso" ? 1 : -1);
-export const balance = () => fin.initial + fin.movs.reduce((s, m) => s + sign(m) * m.amount, 0);
+// Un movimiento con fecha futura está "programado": no cuenta hasta que llegue su día.
+export const isScheduled = (m) => m.date > todayStr();
+const done = () => fin.movs.filter((m) => !isScheduled(m));
+export const balance = () => fin.initial + done().reduce((s, m) => s + sign(m) * m.amount, 0);
+export const scheduled = () => fin.movs.filter(isScheduled).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
+export const projectedBalance = () => fin.initial + fin.movs.reduce((s, m) => s + sign(m) * m.amount, 0);
 export function monthTotals(key) {
   let ing = 0;
   let gas = 0;
-  for (const m of fin.movs) {
+  for (const m of done()) {
     if (!m.date.startsWith(key)) continue;
     if (m.type === "ingreso") ing += m.amount;
     else gas += m.amount;
@@ -70,7 +75,7 @@ export function monthTotals(key) {
 }
 export function byCategory(key) {
   const totals = {};
-  for (const m of fin.movs) {
+  for (const m of done()) {
     if (m.type !== "gasto" || !m.date.startsWith(key)) continue;
     totals[m.cat] = (totals[m.cat] || 0) + m.amount;
   }
@@ -142,6 +147,7 @@ export function summaryFor(key) {
   const t = monthTotals(key);
   return {
     saldo_disponible: balance(),
+    programados: scheduled().length,
     saldo_inicial: fin.initial,
     mes: key,
     ingresos_mes: t.ing,
@@ -302,7 +308,14 @@ export function openMovSheet(m, presetType) {
     } else {
       await addMovs([{ type, amount: value, cat, desc: desc.value.trim(), date: date.value }], "tú");
       viewMonth = date.value.slice(0, 7);
-      toast(type === "ingreso" ? `Ingreso de ${fmtMoney(value)} registrado` : `Gasto de ${fmtMoney(value)} registrado`);
+      const future = date.value > todayStr();
+      toast(
+        future
+          ? `${type === "ingreso" ? "Ingreso" : "Pago"} de ${fmtMoney(value)} programado para el ${fmtShort.format(parseYmd(date.value))}`
+          : type === "ingreso"
+            ? `Ingreso de ${fmtMoney(value)} registrado`
+            : `Gasto de ${fmtMoney(value)} registrado`,
+      );
     }
     sheet.close();
   });
@@ -501,6 +514,50 @@ export function renderFin() {
     ),
   );
 
+  // Programados: pagos e ingresos con fecha futura
+  const sched = scheduled();
+  if (sched.length) {
+    const proj = projectedBalance();
+    const schedGas = sched.filter((m) => m.type === "gasto").reduce((s, m) => s + m.amount, 0);
+    kids.push(
+      h(
+        "div",
+        { class: "section-h" },
+        h("h2", null, "Programados"),
+        h("span", null, schedGas ? `−${fmtMoney(schedGas)}` : ""),
+      ),
+      h(
+        "ul",
+        { class: "mov-list" },
+        sched.slice(0, 8).map((m) =>
+          h(
+            "li",
+            null,
+            h(
+              "button",
+              { type: "button", class: "mov scheduled", onclick: () => openMovSheet(m) },
+              h(
+                "span",
+                { class: "mov-main" },
+                h("span", { class: "t" }, m.desc || catLabel(m.type, m.cat)),
+                h("span", { class: "meta" }, h("span", null, cap(fmtShort.format(parseYmd(m.date)))), h("span", null, catLabel(m.type, m.cat))),
+              ),
+              h("span", { class: "mov-amt " + m.type }, (m.type === "ingreso" ? "+" : "−") + fmtMoney(m.amount)),
+            ),
+          ),
+        ),
+        sched.length > 8 ? h("li", { class: "small" }, `y ${sched.length - 8} más…`) : null,
+      ),
+      h(
+        "div",
+        { class: "projection" + (proj < 0 ? " neg" : "") },
+        h("span", null, "Saldo después de los programados"),
+        h("b", null, fmtMoney(proj)),
+      ),
+      h("p", { class: "small" }, "Se descuentan solos el día de su fecha. Si no lo pagas ese día, ábrelo y cámbiale la fecha."),
+    );
+  }
+
   // Mes
   kids.push(
     h(
@@ -648,12 +705,18 @@ export function renderFin() {
           null,
           h(
             "button",
-            { type: "button", class: "mov", onclick: () => openMovSheet(m) },
+            { type: "button", class: "mov" + (isScheduled(m) ? " scheduled" : ""), onclick: () => openMovSheet(m) },
             h(
               "span",
               { class: "mov-main" },
               h("span", { class: "t" }, m.desc || catLabel(m.type, m.cat)),
-              h("span", { class: "meta" }, h("span", null, catLabel(m.type, m.cat)), m.fixedId ? h("span", null, "fijo") : null),
+              h(
+                "span",
+                { class: "meta" },
+                h("span", null, catLabel(m.type, m.cat)),
+                m.fixedId ? h("span", null, "fijo") : null,
+                isScheduled(m) ? h("span", { class: "sched-tag" }, "programado") : null,
+              ),
             ),
             h("span", { class: "mov-amt " + m.type }, (m.type === "ingreso" ? "+" : "−") + fmtMoney(m.amount)),
           ),

@@ -269,6 +269,13 @@ nav.tabs button[aria-current="page"] { color: var(--accent); background: var(--a
 .notice-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .widget-btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
 
+/* Programados */
+.mov.scheduled { border-style: dashed; background: transparent; }
+.sched-tag { font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+.projection { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 13px; }
+.projection b { font-variant-numeric: tabular-nums; font-size: 15px; }
+.projection.neg b { color: var(--danger); }
+
 /* Pegar datos */
 .sheet textarea#p-text { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 12px; resize: vertical; font-size: 12px; }
 .paste-preview { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; font-size: 14px; }

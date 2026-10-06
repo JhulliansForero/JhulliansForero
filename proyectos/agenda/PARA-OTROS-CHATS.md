@@ -88,4 +88,5 @@ Notas sobre el formato:
 
 - Una nota es de **texto** (usa `"texto"`) o de **lista** (usa `"lista"`), no ambas.
 - Los **fijos** empiezan a registrarse solos el mes siguiente. Si un pago de este mes ya pasó, ponlo también en `movimientos`.
+- Un movimiento con **fecha futura** (por ejemplo, las cuotas de una deuda) queda **programado**: no se descuenta del saldo hasta que llega su día, y ese día me llega una notificación. Así que puedes planear pagos con sus fechas reales.
 - Si te pido solo gastos, devuelve solo `"agenda_jhullians"` y `"movimientos"`.
