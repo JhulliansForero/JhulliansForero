@@ -8,10 +8,12 @@
     "dev": "esbuild src/app.js --bundle --format=esm --target=es2020 --outfile=www/app.js --servedir=www"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.131.0",
     "@capacitor/android": "8.5.2",
     "@capacitor/app": "8.1.2",
-    "@capacitor/core": "8.5.2"
+    "@capacitor/core": "8.5.2",
+    "@capacitor/filesystem": "8.1.4",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3"
   },
   "devDependencies": {
     "@capacitor/assets": "3.0.5",

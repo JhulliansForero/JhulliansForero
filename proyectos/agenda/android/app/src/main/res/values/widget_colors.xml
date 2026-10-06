@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="w_bg">#FFFFFFFF</color>
-    <color name="w_surface">#FFEEF2F0</color>
+    <color name="w_surface">#FFF0F4F2</color>
+    <color name="w_track">#FFE1E8E4</color>
     <color name="w_ink">#FF14211C</color>
     <color name="w_muted">#FF5A6B64</color>
     <color name="w_accent">#FF0D7A52</color>
     <color name="w_accent_ink">#FFFFFFFF</color>
+    <color name="w_out">#FF7B8A84</color>
     <color name="w_danger">#FFB4382C</color>
+    <color name="w_head_start">#FF0E8A5C</color>
+    <color name="w_head_end">#FF0A5C3E</color>
+    <color name="w_on_head">#FFFFFFFF</color>
+    <color name="w_on_head_soft">#CCFFFFFF</color>
     <color name="w_cat_estudio">#FF2F63C9</color>
     <color name="w_cat_practica">#FFB97A06</color>
     <color name="w_cat_personal">#FF8752C8</color>
     <color name="w_cat_salud">#FFCC4B3C</color>
     <color name="w_cat_otro">#FF66746E</color>
+    <color name="n_verde">#FFDFF2E7</color>
+    <color name="n_azul">#FFDDE8FB</color>
+    <color name="n_amarillo">#FFFBF0C9</color>
+    <color name="n_rosa">#FFFADFE2</color>
+    <color name="n_lila">#FFEBE1FA</color>
+    <color name="n_gris">#FFE6EAE8</color>
 </resources>

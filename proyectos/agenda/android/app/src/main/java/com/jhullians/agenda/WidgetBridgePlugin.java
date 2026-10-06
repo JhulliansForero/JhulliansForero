@@ -21,13 +21,14 @@ public class WidgetBridgePlugin extends Plugin {
     public void update(PluginCall call) {
         String agenda = call.getString("agenda");
         String finanzas = call.getString("finanzas");
+        String nota = call.getString("nota");
         Context ctx = getContext();
         SharedPreferences.Editor editor = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit();
         if (agenda != null) editor.putString("agenda", agenda);
         if (finanzas != null) editor.putString("finanzas", finanzas);
+        if (nota != null) editor.putString("nota", nota);
         editor.apply();
-        AgendaWidget.refreshAll(ctx);
-        FinanzasWidget.refreshAll(ctx);
+        WidgetUtil.refreshAll(ctx);
         call.resolve();
     }
 
@@ -48,7 +49,10 @@ public class WidgetBridgePlugin extends Plugin {
             call.resolve(ret);
             return;
         }
-        Class<?> cls = "finanzas".equals(kind) ? FinanzasWidget.class : AgendaWidget.class;
+        Class<?> cls = AgendaWidget.class;
+        if ("finanzas".equals(kind)) cls = FinanzasWidget.class;
+        else if ("nota".equals(kind)) cls = NotaWidget.class;
+        else if ("resumen".equals(kind)) cls = ResumenWidget.class;
         boolean ok = mgr.requestPinAppWidget(new ComponentName(ctx, cls), null, null);
         ret.put("supported", ok);
         call.resolve(ret);

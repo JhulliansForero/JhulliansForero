@@ -1,43 +1,38 @@
 # Agenda de Jhullians
 
-App de agenda para el celular con calendario y un chat con Claude que crea, mueve y completa actividades por ti.
+App personal para Android (y web instalable) que funciona sin internet: agenda, calendario, finanzas, hábitos y notas, con notificaciones y widgets.
 
-- **Hoy**: actividades del día, progreso y próximos 7 días.
-- **Calendario**: vista mensual por categorías (Estudio, Práctica, Personal, Salud, Otro).
-- **Claude**: chat que modifica la agenda. Los chats quedan guardados y puedes retomar cualquiera desde "Chats anteriores".
+- **Hoy**: progreso del día, lo que sigue, actividades, hábitos y próximos 7 días.
+- **Calendario**: vista mensual por categorías (Estudio, Práctica, Personal, Salud, Otro). Las actividades pueden repetirse (diario, entre semana, semanal o mensual) y tener recordatorio.
+- **Finanzas**: saldo disponible (puede quedar negativo), ingresos y gastos del mes, gastos por categoría, presupuesto mensual y movimientos fijos que se registran solos.
+- **Hábitos**: días de la semana, recordatorio opcional y racha.
+- **Notas**: texto o lista de chequeo, con color, búsqueda y nota fijada.
+- **Notificaciones**: recordatorios de actividades y hábitos, resumen de la mañana, aviso de movimientos fijos y recordatorio nocturno para anotar gastos.
+- **Widgets**: Hoy, Finanzas, Nota y Resumen.
+- **Copia de seguridad**: exporta todo a un archivo JSON y lo restaura.
 
-Todo se guarda en el dispositivo (IndexedDB). Solo los mensajes del chat salen a internet, directo a la API de Anthropic.
+Todo se guarda en el dispositivo (IndexedDB). La app no usa internet.
 
-## Instalar
+## Compilar el APK
 
-- **Android (APK):** cada push a `proyectos/agenda/` compila un APK con GitHub Actions y lo publica en *Releases* como `Agenda-Jhullians.apk`. Las versiones nuevas se instalan encima sin perder datos porque todas se firman con la misma llave (`signing/debug.keystore`).
-- **Web instalable (PWA):** el mismo flujo publica `www/` en la rama `gh-pages`. Con GitHub Pages activado sobre esa rama, abre la página en el celular y toca *Agregar a pantalla de inicio*.
-
-## Clave de API
-
-El chat usa la API de Claude con tu propia clave (console.anthropic.com → API Keys). Se pega una vez en **Ajustes** dentro de la app y queda guardada solo en el dispositivo.
-
-## Desarrollo
+Necesitas Node 22, JDK 21 y el SDK de Android (plataforma 36).
 
 ```bash
-npm install
-npm run build      # genera www/app.js
-npm run dev        # servidor local en http://localhost:8000
+npm ci
+npm run build                     # genera www/app.js
+npx cap sync android              # copia la app web al proyecto Android
+cp signing/debug.keystore ~/.android/debug.keystore
+cd android && ./gradlew assembleDebug
 ```
 
-Para compilar el APK en tu computador necesitas Android Studio:
+El APK queda en `android/app/build/outputs/apk/debug/app-debug.apk`. Todas las versiones se firman con la misma llave (`signing/debug.keystore`) para que se instalen encima sin perder datos.
 
-```bash
-npx cap add android
-npx capacitor-assets generate --android
-npx cap sync android
-npx cap open android
-```
+El flujo `.github/workflows/agenda.yml` hace lo mismo en GitHub Actions, publica el APK en *Releases* y sube la versión web a la rama `gh-pages`.
 
 ## Estructura
 
-- `src/app.js`: interfaz (pantallas, formularios, chat, ajustes).
-- `src/claude.js`: conversación con Claude y herramientas que leen y cambian la agenda.
-- `src/store.js`: almacenamiento local.
+- `src/app.js`: pantallas Hoy y Calendario, ajustes, notificaciones, widgets y arranque.
+- `src/finanzas.js`, `src/habitos.js`, `src/notas.js`: cada sección.
+- `src/notify.js`: notificaciones locales. `src/backup.js`: copia de seguridad. `src/store.js`: almacenamiento.
 - `www/`: HTML, estilos, fuentes, íconos, manifiesto y service worker.
-- `assets/`: ícono y pantalla de inicio de Android.
+- `android/`: proyecto Android con los widgets nativos (`app/src/main/java/com/jhullians/agenda/`) y sus diseños (`res/layout/widget_*.xml`).

@@ -2,14 +2,26 @@
 <resources>
     <color name="w_bg">#FF17211E</color>
     <color name="w_surface">#FF1F2B27</color>
+    <color name="w_track">#FF2C3A35</color>
     <color name="w_ink">#FFE6EFEB</color>
     <color name="w_muted">#FF94A69E</color>
     <color name="w_accent">#FF45D398</color>
     <color name="w_accent_ink">#FF062418</color>
+    <color name="w_out">#FF8FA19A</color>
     <color name="w_danger">#FFF07A6C</color>
+    <color name="w_head_start">#FF14684A</color>
+    <color name="w_head_end">#FF0B3F2C</color>
+    <color name="w_on_head">#FFFFFFFF</color>
+    <color name="w_on_head_soft">#CCFFFFFF</color>
     <color name="w_cat_estudio">#FF6F9CF5</color>
     <color name="w_cat_practica">#FFE3AC3C</color>
     <color name="w_cat_personal">#FFB58CF0</color>
     <color name="w_cat_salud">#FFF0806F</color>
     <color name="w_cat_otro">#FF93A29B</color>
+    <color name="n_verde">#FF1B3A2D</color>
+    <color name="n_azul">#FF1C2C47</color>
+    <color name="n_amarillo">#FF3B3218</color>
+    <color name="n_rosa">#FF432329</color>
+    <color name="n_lila">#FF312546</color>
+    <color name="n_gris">#FF252E2B</color>
 </resources>

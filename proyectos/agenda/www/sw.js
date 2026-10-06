@@ -1,6 +1,6 @@
 // Guarda la app en el teléfono para que abra sin internet.
 // Las llamadas a la API de Claude nunca pasan por la caché.
-const CACHE = "agenda-v2";
+const CACHE = "agenda-v3";
 const SHELL = [
   "./",
   "index.html",

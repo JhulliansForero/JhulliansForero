@@ -158,7 +158,23 @@ export function widgetPayload() {
   const key = monthKey(now);
   const t = monthTotals(key);
   const b = balance();
-  return { saldo: fmtMoney(b), neg: b < 0, mes: key, mesNombre: cap(fmtMonthName.format(now)), ing: fmtMoney(t.ing), gas: fmtMoney(t.gas) };
+  const max = Math.max(t.ing, t.gas, 1);
+  const out = {
+    saldo: fmtMoney(b),
+    neg: b < 0,
+    mes: key,
+    mesNombre: cap(fmtMonthName.format(now)),
+    ing: fmtMoney(t.ing),
+    gas: fmtMoney(t.gas),
+    ingPct: Math.round((t.ing / max) * 100),
+    gasPct: Math.round((t.gas / max) * 100),
+    estado: b < 0 ? "Estás en negativo" : t.net >= 0 ? "Vas bien este mes" : "Este mes gastas más de lo que entra",
+  };
+  if (fin.budget) {
+    const left = fin.budget - t.gas;
+    out.presupuesto = left >= 0 ? `Te quedan ${fmtMoney(left)} del presupuesto` : `Te pasaste ${fmtMoney(-left)} del presupuesto`;
+  }
+  return out;
 }
 
 // ---------- Interfaz ----------
@@ -637,7 +653,7 @@ export function renderFin() {
               "span",
               { class: "mov-main" },
               h("span", { class: "t" }, m.desc || catLabel(m.type, m.cat)),
-              h("span", { class: "meta" }, h("span", null, catLabel(m.type, m.cat)), m.source === "claude" ? h("span", { class: "by-claude" }, "✦ Claude") : null, m.fixedId ? h("span", null, "fijo") : null),
+              h("span", { class: "meta" }, h("span", null, catLabel(m.type, m.cat)), m.fixedId ? h("span", null, "fijo") : null),
             ),
             h("span", { class: "mov-amt " + m.type }, (m.type === "ingreso" ? "+" : "−") + fmtMoney(m.amount)),
           ),

@@ -30,7 +30,7 @@
         <receiver
             android:name=".AgendaWidget"
             android:exported="false"
-            android:label="Agenda de hoy">
+            android:label="Hoy">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -50,6 +50,28 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/finanzas_widget_info" />
         </receiver>
+        <receiver
+            android:name=".NotaWidget"
+            android:exported="false"
+            android:label="Nota">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/nota_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".ResumenWidget"
+            android:exported="false"
+            android:label="Resumen del día">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/resumen_widget_info" />
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -63,4 +85,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Recordatorios a la hora exacta (Android 13+ lo concede solo a apps de agenda) -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 </manifest>
